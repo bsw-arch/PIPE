@@ -1,0 +1,83 @@
+# Melange Package Build Configuration
+# ====================================
+# Creates custom APK package for PIPE Task Bot base
+
+package:
+  name: pipe-task-bot-base
+  version: 0.1.0
+  epoch: 0
+  description: "PIPE Task Bot base runtime components"
+  copyright:
+    - license: Apache-2.0
+      paths:
+        - "*"
+  dependencies:
+    runtime:
+      - python-3.11
+      - ca-certificates
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - busybox
+      - python-3.11
+      - python-3.11-dev
+      - build-base
+      - ca-certificates
+
+pipeline:
+  - name: Create directory structure
+    runs: |
+      mkdir -p "${{targets.destdir}}"/app
+      mkdir -p "${{targets.destdir}}"/usr/local/lib/python3.11/site-packages
+
+  - name: Install base dependencies
+    runs: |
+      # Minimal Python dependencies for all bots
+      pip install --no-cache-dir \
+        --target="${{targets.destdir}}/usr/local/lib/python3.11/site-packages" \
+        pydantic==2.5.0
+
+  - name: Create health check script
+    runs: |
+      cat > "${{targets.destdir}}"/app/health-check.sh << 'EOF'
+      #!/bin/sh
+      # Basic health check for PIPE containers
+      python3 -c "import sys; sys.exit(0)"
+      EOF
+      chmod +x "${{targets.destdir}}"/app/health-check.sh
+
+  - name: Set permissions
+    runs: |
+      chown -R 65532:65532 "${{targets.destdir}}"/app
+
+# Subpackages (optional extensions)
+subpackages:
+  - name: pipe-task-bot-base-dev
+    description: "Development tools for PIPE Task Bot"
+    dependencies:
+      runtime:
+        - pipe-task-bot-base
+        - python-3.11-dev
+    pipeline:
+      - name: Install dev dependencies
+        runs: |
+          pip install --no-cache-dir \
+            --target="${{targets.subpkgdir}}/usr/local/lib/python3.11/site-packages" \
+            pytest==7.4.0 \
+            black==23.12.0
+
+# Test pipeline
+test:
+  pipeline:
+    - name: Test Python import
+      runs: |
+        python3 -c "import pydantic; print('✓ Pydantic imported')"
+    - name: Test health check
+      runs: |
+        sh /app/health-check.sh
+        echo "✓ Health check passed"

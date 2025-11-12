@@ -1,0 +1,49 @@
+# Base Wolfi Image Configuration
+# ==============================
+# Ultra-minimal Wolfi base for PIPE Task Bot containers
+# Target size: 3-5 MB
+
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+
+  packages:
+    # Core essentials only
+    - wolfi-baselayout
+    - ca-certificates
+    - busybox
+    - python-3.11
+    - python-3.11-base
+
+# Accounts
+accounts:
+  groups:
+    - groupname: nonroot
+      gid: 65532
+  users:
+    - username: nonroot
+      uid: 65532
+      gid: 65532
+      shell: /sbin/nologin
+  run-as: nonroot
+
+# Environment
+environment:
+  PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+# Minimal filesystem
+cmd: /usr/bin/python3
+
+# Labels
+annotations:
+  org.opencontainers.image.title: "PIPE Task Bot Base"
+  org.opencontainers.image.description: "Ultra-minimal Wolfi base for task automation"
+  org.opencontainers.image.vendor: "PIPE Organization"
+  org.opencontainers.image.source: "https://codeberg.org/PIPE-Bots/pipe-task-bot"
+  com.axis.container.type: "base"
+  com.axis.wolfi.minimal: "true"
