@@ -1,0 +1,201 @@
+---
+# Ansible Playbook: Deploy PIPE Task Bot Containers
+# ==================================================
+# Deploys Wolfi micro-containers with Podman and OpenBao secrets
+
+- name: Deploy PIPE Task Bot with Podman
+  hosts: axis_hosts
+  become: yes
+  vars:
+    registry_url: "localhost:5000"
+    container_tag: "latest"
+    openbao_addr: "http://localhost:8200"
+    data_dir: "/var/lib/pipe-integration-bot"
+
+  tasks:
+    - name: Check if Podman is installed
+      command: podman --version
+      register: podman_version
+      changed_when: false
+
+    - name: Display Podman version
+      debug:
+        msg: "Using {{ podman_version.stdout }}"
+
+    - name: Create data directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+        owner: 65532
+        group: 65532
+      loop:
+        - "{{ data_dir }}"
+        - "{{ data_dir }}/task-bot"
+        - "{{ data_dir }}/task-scheduler"
+        - "{{ data_dir }}/task-executor"
+        - "{{ data_dir }}/logs"
+
+    - name: Fetch secrets from OpenBao
+      block:
+        - name: Get KERAGR URL from OpenBao
+          shell: |
+            openbao kv get -field=keragr_url axis-bots/task-bot
+          register: keragr_url
+          environment:
+            VAULT_ADDR: "{{ openbao_addr }}"
+          no_log: true
+
+        - name: Get Coordination URL from OpenBao
+          shell: |
+            openbao kv get -field=coordination_url axis-bots/task-bot
+          register: coordination_url
+          environment:
+            VAULT_ADDR: "{{ openbao_addr }}"
+          no_log: true
+
+        - name: Get API Key from OpenBao
+          shell: |
+            openbao kv get -field=api_key axis-bots/task-bot
+          register: api_key
+          environment:
+            VAULT_ADDR: "{{ openbao_addr }}"
+          no_log: true
+      when: openbao_integration | default(true)
+
+    - name: Create Podman network
+      command: podman network create axis-network
+      register: network_result
+      failed_when:
+        - network_result.rc != 0
+        - "'already exists' not in network_result.stderr"
+      changed_when: network_result.rc == 0
+
+    - name: Pull base container images
+      containers.podman.podman_image:
+        name: "{{ registry_url }}/{{ item }}"
+        tag: "{{ container_tag }}"
+        pull: yes
+      loop:
+        - pipe-integration-bot-base
+        - pipe-integration-bot
+        - axis-task-scheduler
+        - axis-task-executor
+
+    - name: Deploy Task Bot container
+      containers.podman.podman_container:
+        name: pipe-integration-bot
+        image: "{{ registry_url }}/pipe-integration-bot:{{ container_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        network: axis-network
+        ports:
+          - "8080:8080"
+        volumes:
+          - "{{ data_dir }}/task-bot:/app/data:Z"
+          - "{{ data_dir }}/logs:/app/logs:Z"
+        env:
+          TASK_BOT_HOME: "/app"
+          TASK_BOT_LOG_LEVEL: "INFO"
+          KERAGR_URL: "{{ keragr_url.stdout | default('http://localhost:3108') }}"
+          COORDINATION_URL: "{{ coordination_url.stdout | default('http://localhost:3111') }}"
+          API_KEY: "{{ api_key.stdout | default('') }}"
+          AUTONOMOUS: "true"
+          LEARNING_ENABLED: "true"
+        healthcheck:
+          test: ["CMD", "python3", "-c", "import sys; sys.exit(0)"]
+          interval: 30s
+          timeout: 3s
+          retries: 3
+        user: "65532:65532"
+
+    - name: Deploy Task Scheduler container
+      containers.podman.podman_container:
+        name: axis-task-scheduler
+        image: "{{ registry_url }}/axis-task-scheduler:{{ container_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        network: axis-network
+        ports:
+          - "8081:8081"
+        volumes:
+          - "{{ data_dir }}/task-scheduler:/app/schedules:Z"
+          - "{{ data_dir }}/logs:/app/logs:Z"
+        env:
+          SCHEDULER_HOME: "/app"
+          SCHEDULER_LOG_LEVEL: "INFO"
+        user: "65532:65532"
+
+    - name: Deploy Task Executor containers (scaled)
+      containers.podman.podman_container:
+        name: "axis-task-executor-{{ item }}"
+        image: "{{ registry_url }}/axis-task-executor:{{ container_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        network: axis-network
+        ports:
+          - "{{ 8082 + item }}:8082"
+        volumes:
+          - "{{ data_dir }}/task-executor:/app/tasks:Z"
+          - "{{ data_dir }}/logs:/app/logs:Z"
+        env:
+          EXECUTOR_HOME: "/app"
+          EXECUTOR_LOG_LEVEL: "INFO"
+          EXECUTOR_WORKERS: "4"
+        user: "65532:65532"
+      loop: "{{ range(0, executor_replicas | default(3)) | list }}"
+
+    - name: Wait for containers to be healthy
+      command: podman healthcheck run {{ item }}
+      register: healthcheck
+      until: healthcheck.rc == 0
+      retries: 10
+      delay: 5
+      loop:
+        - pipe-integration-bot
+        - axis-task-scheduler
+      failed_when: false
+
+    - name: Display container status
+      command: podman ps --filter "name=axis-task-*"
+      register: container_status
+      changed_when: false
+
+    - name: Show running containers
+      debug:
+        msg: "{{ container_status.stdout_lines }}"
+
+    - name: Check container sizes
+      shell: podman images --format "{{`{{.Repository}}`}}:{{`{{.Tag}}`}} - {{`{{.Size}}`}}" | grep axis-task
+      register: image_sizes
+      changed_when: false
+
+    - name: Display container sizes
+      debug:
+        msg: "{{ image_sizes.stdout_lines }}"
+
+- name: Verify deployment
+  hosts: axis_hosts
+  tasks:
+    - name: Test Task Bot endpoint
+      uri:
+        url: "http://localhost:8080/health"
+        method: GET
+        status_code: 200
+      register: taskbot_health
+      retries: 5
+      delay: 3
+      until: taskbot_health.status == 200
+      failed_when: false
+
+    - name: Display health check result
+      debug:
+        msg: "Task Bot is {{ 'healthy' if taskbot_health.status == 200 else 'unhealthy' }}"
+
+    - name: Collect metrics
+      debug:
+        msg:
+          - "Deployment complete!"
+          - "Task Bot: http://localhost:8080"
+          - "Task Scheduler: http://localhost:8081"
+          - "Task Executors: http://localhost:8082-{{ 8082 + (executor_replicas | default(3)) - 1 }}"
