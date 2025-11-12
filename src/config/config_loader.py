@@ -35,10 +35,10 @@ class ConfigLoader:
         if not filepath.exists():
             raise FileNotFoundError(f"Configuration file not found: {filepath}")
 
-        with open(filepath, 'r') as f:
-            if filename.endswith('.yaml') or filename.endswith('.yml'):
+        with open(filepath, "r") as f:
+            if filename.endswith(".yaml") or filename.endswith(".yml"):
                 return yaml.safe_load(f)
-            elif filename.endswith('.json'):
+            elif filename.endswith(".json"):
                 return json.load(f)
             else:
                 raise ValueError(f"Unsupported configuration format: {filename}")
@@ -57,7 +57,7 @@ class ConfigLoader:
         for key, value in os.environ.items():
             if key.startswith(prefix):
                 # Remove prefix and convert to lowercase
-                config_key = key[len(prefix):].lower()
+                config_key = key[len(prefix) :].lower()
                 config[config_key] = value
 
         return config
@@ -94,7 +94,9 @@ class ConfigLoader:
             else:
                 base[key] = value
 
-    def load(self, config_file: str = "config.yaml", use_env: bool = True) -> Dict[str, Any]:
+    def load(
+        self, config_file: str = "config.yaml", use_env: bool = True
+    ) -> Dict[str, Any]:
         """
         Load complete configuration.
 
@@ -136,7 +138,7 @@ class ConfigLoader:
         Returns:
             Configuration value
         """
-        keys = key.split('.')
+        keys = key.split(".")
         value = self.config
 
         for k in keys:
@@ -150,7 +152,9 @@ class ConfigLoader:
         return value
 
 
-def load_config(config_file: str = "config.yaml", config_dir: str = "./config") -> Dict[str, Any]:
+def load_config(
+    config_file: str = "config.yaml", config_dir: str = "./config"
+) -> Dict[str, Any]:
     """
     Convenience function to load configuration.
 

@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from pathlib import Path
 from datetime import datetime
 
@@ -47,7 +47,7 @@ class StateManager:
             state_file = self.state_dir / f"{bot_name}.json"
             if state_file.exists():
                 try:
-                    with open(state_file, 'r') as f:
+                    with open(state_file, "r") as f:
                         loaded_state = json.load(f)
                         self.state[bot_name] = loaded_state
                         self.logger.info(f"Loaded state for bot: {bot_name}")
@@ -59,7 +59,9 @@ class StateManager:
             self.state[bot_name] = {}
             return self.state[bot_name]
 
-    async def save_state(self, bot_name: str, state_data: Dict[str, Any] = None) -> bool:
+    async def save_state(
+        self, bot_name: str, state_data: Dict[str, Any] = None
+    ) -> bool:
         """
         Save state for a specific bot.
 
@@ -82,12 +84,12 @@ class StateManager:
             try:
                 # Add metadata
                 save_data = {
-                    'bot_name': bot_name,
-                    'last_updated': datetime.now().isoformat(),
-                    'data': self.state[bot_name]
+                    "bot_name": bot_name,
+                    "last_updated": datetime.now().isoformat(),
+                    "data": self.state[bot_name],
                 }
 
-                with open(state_file, 'w') as f:
+                with open(state_file, "w") as f:
                     json.dump(save_data, f, indent=2)
 
                 self.logger.debug(f"Saved state for bot: {bot_name}")

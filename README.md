@@ -4,18 +4,22 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
-> **Advanced bot automation framework for the PIPE domain within the BSW Architecture project**
+> **Advanced bot automation framework with enterprise-grade governance for the PIPE domain within the BSW Architecture project**
 
 ## 🚀 Overview
 
-The PIPE Domain Bot System is a comprehensive, production-ready bot automation framework designed for the BSW Architecture project. It provides a modular, extensible platform for building and managing automated bots for pipeline orchestration, data processing, and system monitoring.
+The PIPE Domain Bot System is a comprehensive, production-ready bot automation framework designed for the BSW Architecture project. It provides a modular, extensible platform for building and managing automated bots for pipeline orchestration, data processing, system monitoring, and **cross-domain integration governance**.
 
 ### Key Features
 
-- **🤖 Multiple Bot Types**: Pipeline automation, data processing, and monitoring bots
+- **🤖 Four Bot Types**: Pipeline automation, data processing, monitoring, and integration hub bots
+- **🏛️ Enterprise Governance**: Full AgenticAI governance architecture with compliance tracking
+- **🔌 Cross-Domain Integration**: Hub-and-spoke integration across 9 domains
 - **📡 Event-Driven Architecture**: Loosely coupled bot communication via event bus
 - **💾 State Management**: Persistent state storage with automatic recovery
 - **📊 Metrics & Monitoring**: Built-in metrics collection and health checking
+- **✅ Compliance Tracking**: Automated governance compliance monitoring
+- **🔍 Review Pipeline**: Structured review process for cross-domain integrations
 - **🔄 Async/Await**: Fully asynchronous design for high performance
 - **🐳 Docker Ready**: Complete containerization support
 - **🧪 Well Tested**: Comprehensive unit and integration tests
@@ -126,6 +130,29 @@ Monitors system health and performance.
 - Performance tracking
 - Alerting and notifications
 - Health dashboards
+
+### 4. Integration Hub Bot ⭐ NEW
+
+Manages cross-domain integration and enterprise governance.
+
+**Features:**
+- Cross-domain message routing
+- Integration governance and compliance
+- Review pipeline orchestration
+- Domain registry management
+- Quality dashboard aggregation
+- 9-domain ecosystem support
+
+**Supported Domains:**
+BNI, BNP, AXIS, IV, EcoX, THRIVE, DC, BU, PIPE
+
+**Use Cases:**
+- Enterprise integration management
+- Cross-domain communication
+- Governance compliance tracking
+- Integration quality monitoring
+
+**📖 Full Documentation:** See [GOVERNANCE.md](docs/GOVERNANCE.md)
 
 ---
 

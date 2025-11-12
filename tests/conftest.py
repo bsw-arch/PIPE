@@ -1,8 +1,7 @@
 """Pytest configuration and fixtures."""
 
-import pytest
 import asyncio
-from pathlib import Path
+import pytest
 import tempfile
 import shutil
 
@@ -49,9 +48,9 @@ def metrics_collector():
 def bot_config():
     """Provide default bot configuration for testing."""
     return {
-        'log_level': 'DEBUG',
-        'check_interval': 1,
-        'num_workers': 2,
-        'monitor_interval': 1,
-        'health_check_interval': 1
+        "log_level": "DEBUG",
+        "check_interval": 1,
+        "num_workers": 2,
+        "monitor_interval": 1,
+        "health_check_interval": 1,
     }

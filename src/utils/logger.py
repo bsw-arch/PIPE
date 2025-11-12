@@ -9,7 +9,7 @@ from typing import Optional
 def setup_logging(
     log_level: str = "INFO",
     log_file: Optional[str] = None,
-    log_format: Optional[str] = None
+    log_format: Optional[str] = None,
 ) -> logging.Logger:
     """
     Set up logging configuration for the application.
@@ -23,7 +23,7 @@ def setup_logging(
         Configured logger instance
     """
     if log_format is None:
-        log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     # Create formatter
     formatter = logging.Formatter(log_format)

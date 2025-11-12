@@ -11,6 +11,7 @@ from collections import defaultdict
 @dataclass
 class Event:
     """Represents an event in the system."""
+
     event_type: str
     source: str
     data: Dict[str, Any]

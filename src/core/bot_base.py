@@ -1,6 +1,5 @@
 """Base class for all PIPE domain bots."""
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -10,6 +9,7 @@ from enum import Enum
 
 class BotStatus(Enum):
     """Bot operational status."""
+
     INITIALIZING = "initializing"
     RUNNING = "running"
     PAUSED = "paused"
@@ -42,7 +42,7 @@ class BotBase(ABC):
 
         # Set up logging
         self.logger = logging.getLogger(f"pipe.bot.{name}")
-        self.logger.setLevel(config.get('log_level', 'INFO'))
+        self.logger.setLevel(config.get("log_level", "INFO"))
 
     @abstractmethod
     async def initialize(self) -> bool:
@@ -131,12 +131,12 @@ class BotBase(ABC):
             uptime = (datetime.now() - self.start_time).total_seconds()
 
         return {
-            'name': self.name,
-            'status': self.status.value,
-            'uptime_seconds': uptime,
-            'error_count': self.error_count,
-            'task_count': self.task_count,
-            'start_time': self.start_time.isoformat() if self.start_time else None
+            "name": self.name,
+            "status": self.status.value,
+            "uptime_seconds": uptime,
+            "error_count": self.error_count,
+            "task_count": self.task_count,
+            "start_time": self.start_time.isoformat() if self.start_time else None,
         }
 
     async def health_check(self) -> bool:
