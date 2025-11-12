@@ -14,6 +14,7 @@ from config.config_loader import load_config
 from bots.pipeline_bot import PipelineBot
 from bots.data_processor_bot import DataProcessorBot
 from bots.monitor_bot import MonitorBot
+from bots.integration_hub_bot import IntegrationHubBot
 
 
 class BotOrchestrator:
@@ -78,6 +79,17 @@ class BotOrchestrator:
                 metrics=self.metrics,
             )
             self.bots.append(monitor_bot)
+
+        # Create IntegrationHubBot
+        if bot_configs.get("integration_hub", {}).get("enabled", True):
+            integration_hub = IntegrationHubBot(
+                name="integration_hub_bot",
+                config=bot_configs.get("integration_hub", {}),
+                event_bus=self.event_bus,
+                state_manager=self.state_manager,
+                metrics=self.metrics,
+            )
+            self.bots.append(integration_hub)
 
         print(f"Initialized {len(self.bots)} bots")
 

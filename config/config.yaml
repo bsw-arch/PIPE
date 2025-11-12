@@ -65,3 +65,23 @@ bots:
     error_threshold: 10
     alert_retention_hours: 24
     log_level: "INFO"
+
+  # Integration Hub bot (PIPE AgenticAI Governance)
+  integration_hub:
+    enabled: true
+    check_interval: 30
+    log_level: "INFO"
+    governance:
+      review_required: true
+      compliance_tracking: true
+      quality_monitoring: true
+    supported_domains:
+      - BNI
+      - BNP
+      - AXIS
+      - IV
+      - EcoX
+      - THRIVE
+      - DC
+      - BU
+      - PIPE
