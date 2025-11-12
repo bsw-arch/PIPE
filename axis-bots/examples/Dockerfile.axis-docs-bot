@@ -1,0 +1,57 @@
+# AXIS Documentation Bot - Optimized Container
+# Target size: <50MB using Chainguard Wolfi base
+
+FROM cgr.dev/chainguard/wolfi-base:latest AS base
+
+# Install minimal dependencies
+RUN apk add --no-cache \
+    python-3.11 \
+    py3-pip \
+    git
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for caching
+COPY axis-bots/examples/requirements.txt .
+
+# Install Python dependencies (no cache to minimize size)
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Clone documentation repository
+RUN git clone --depth 1 https://github.com/bsw-arch/bsw-arch.git /opt/documentation
+
+# Copy bot code
+COPY axis-bots/examples/axis_docs_bot.py .
+
+# Set environment variables
+ENV DOCS_PATH=/opt/documentation/docs
+ENV BOT_DOMAIN=AXIS
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app:/opt/documentation/bot-utils
+
+# Create non-root user for security
+RUN addgroup -g 1000 axisbot && \
+    adduser -D -u 1000 -G axisbot axisbot && \
+    chown -R axisbot:axisbot /app /opt/documentation
+
+# Switch to non-root user
+USER axisbot
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD python3 -c "import sys; sys.exit(0)" || exit 1
+
+# Labels for metadata
+LABEL maintainer="BSW-Tech Architecture Team"
+LABEL version="1.0.0"
+LABEL domain="AXIS"
+LABEL bot="axis-docs-bot"
+LABEL description="Architecture documentation generation and maintenance"
+LABEL togaf-phase="All phases"
+
+# Expose metrics port (if needed)
+EXPOSE 8000
+
+# Run bot
+CMD ["python3", "axis_docs_bot.py"]

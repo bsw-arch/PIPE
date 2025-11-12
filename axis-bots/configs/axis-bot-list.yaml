@@ -1,0 +1,368 @@
+# AXIS Bots Complete List
+# 45 specialized architecture, design, validation, and strategic planning bots
+
+version: "1.0.0"
+domain: AXIS
+total_bots: 45
+last_updated: "2025-11-12"
+
+categories:
+  architecture_framework:
+    name: "Architecture Framework Bots"
+    bot_count: 12
+    bots:
+      - name: axis-docs-bot
+        description: "Documentation generation and maintenance"
+        resource_tier: medium
+        priority: critical
+        togaf_phase: "All phases"
+
+      - name: axis-patterns-bot
+        description: "Design patterns library and recommendations"
+        resource_tier: medium
+        priority: high
+        togaf_phase: "Phase C, D"
+
+      - name: axis-blueprint-bot
+        description: "System blueprints and reference architectures"
+        resource_tier: large
+        priority: critical
+        togaf_phase: "Phase C, D"
+
+      - name: axis-framework-bot
+        description: "Enterprise architecture frameworks (TOGAF, Zachman)"
+        resource_tier: large
+        priority: critical
+        togaf_phase: "Preliminary, Phase A"
+
+      - name: axis-standards-bot
+        description: "Standards compliance and enforcement"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-notation-bot
+        description: "ArchiMate notation and diagramming"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-modelling-bot
+        description: "Architecture modelling and simulation"
+        resource_tier: large
+        priority: medium
+
+      - name: axis-repository-bot
+        description: "Architecture repository management"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-metamodel-bot
+        description: "Metamodel management and validation"
+        resource_tier: medium
+        priority: medium
+
+      - name: axis-viewpoint-bot
+        description: "Viewpoint generation and management"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-stakeholder-bot
+        description: "Stakeholder analysis and communication"
+        resource_tier: small
+        priority: medium
+
+      - name: axis-catalog-bot
+        description: "Architecture catalogue management"
+        resource_tier: medium
+        priority: medium
+
+  validation_assessment:
+    name: "Validation & Assessment Bots"
+    bot_count: 10
+    bots:
+      - name: axis-validation-bot
+        description: "Architecture validation and compliance checking"
+        resource_tier: medium
+        priority: critical
+
+      - name: axis-assessment-bot
+        description: "System assessment and gap analysis"
+        resource_tier: large
+        priority: critical
+
+      - name: axis-review-bot
+        description: "Design review automation"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-audit-bot
+        description: "Architecture audit and standards compliance"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-compliance-bot
+        description: "Regulatory and standard compliance"
+        resource_tier: medium
+        priority: critical
+        notes: "Validates TOGAF, FAGAM prohibition"
+
+      - name: axis-quality-bot
+        description: "Architecture quality assessment"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-governance-bot
+        description: "Governance policy enforcement"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-principles-bot
+        description: "Architecture principles validation"
+        resource_tier: small
+        priority: medium
+
+      - name: axis-constraints-bot
+        description: "Constraint identification and management"
+        resource_tier: small
+        priority: medium
+
+      - name: axis-requirements-bot
+        description: "Requirements traceability"
+        resource_tier: medium
+        priority: high
+
+  strategic_planning:
+    name: "Strategic & Planning Bots"
+    bot_count: 8
+    bots:
+      - name: axis-strategy-bot
+        description: "Strategic architecture planning"
+        resource_tier: large
+        priority: critical
+        togaf_phase: "Preliminary, Phase A"
+
+      - name: axis-planning-bot
+        description: "Architecture roadmap planning"
+        resource_tier: large
+        priority: high
+        togaf_phase: "Phase E, F"
+
+      - name: axis-risk-bot
+        description: "Risk assessment and mitigation"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-innovation-bot
+        description: "Innovation tracking and adoption"
+        resource_tier: medium
+        priority: medium
+
+      - name: axis-capability-bot
+        description: "Capability-based planning"
+        resource_tier: large
+        priority: high
+        togaf_phase: "Phase B"
+
+      - name: axis-roadmap-bot
+        description: "Technology roadmap management"
+        resource_tier: medium
+        priority: high
+        togaf_phase: "Phase E, F"
+
+      - name: axis-portfolio-bot
+        description: "Portfolio management and optimization"
+        resource_tier: large
+        priority: high
+
+      - name: axis-investment-bot
+        description: "Investment analysis and prioritization"
+        resource_tier: medium
+        priority: medium
+
+  coordination_integration:
+    name: "Coordination & Integration Bots"
+    bot_count: 7
+    bots:
+      - name: axis-coordination-bot
+        description: "Multi-bot coordination and orchestration"
+        resource_tier: large
+        priority: critical
+
+      - name: axis-integration-bot
+        description: "System integration patterns and services"
+        resource_tier: large
+        priority: high
+
+      - name: axis-gateway-bot
+        description: "API gateway management"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-orchestration-bot
+        description: "Workflow orchestration"
+        resource_tier: large
+        priority: high
+
+      - name: axis-collaboration-bot
+        description: "Cross-domain collaboration"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-federation-bot
+        description: "Federated architecture management"
+        resource_tier: medium
+        priority: medium
+
+      - name: axis-interoperability-bot
+        description: "Interoperability standards"
+        resource_tier: medium
+        priority: medium
+
+  operational:
+    name: "Operational Bots"
+    bot_count: 8
+    bots:
+      - name: axis-monitoring-bot
+        description: "Architecture monitoring and alerting"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-analytics-bot
+        description: "Architecture analytics and metrics"
+        resource_tier: large
+        priority: high
+
+      - name: axis-report-bot
+        description: "Reporting and documentation generation"
+        resource_tier: medium
+        priority: high
+
+      - name: axis-kb-bot
+        description: "Knowledge base management"
+        resource_tier: large
+        priority: critical
+        notes: "Integrates with META-KERAGR"
+
+      - name: axis-search-bot
+        description: "Architecture search and discovery"
+        resource_tier: medium
+        priority: medium
+
+      - name: axis-versioning-bot
+        description: "Version control and change management"
+        resource_tier: small
+        priority: high
+
+      - name: axis-migration-bot
+        description: "Migration planning and execution"
+        resource_tier: large
+        priority: high
+        togaf_phase: "Phase F, G"
+
+      - name: axis-transformation-bot
+        description: "Digital transformation management"
+        resource_tier: large
+        priority: high
+
+# Resource Tier Definitions
+resource_tiers:
+  small:
+    cpu: "250m"
+    memory: "256Mi"
+    container_size: "<25MB"
+
+  medium:
+    cpu: "500m"
+    memory: "512Mi"
+    container_size: "<40MB"
+
+  large:
+    cpu: "1000m"
+    memory: "1Gi"
+    container_size: "<50MB"
+
+# Priority Levels
+priority_levels:
+  critical: "Essential for system operation"
+  high: "Important for key functionality"
+  medium: "Enhances system capabilities"
+  low: "Nice to have"
+
+# Common Dependencies
+common_dependencies:
+  - python: "3.11+"
+  - pyyaml: ">=6.0"
+  - requests: ">=2.31.0"
+  - pydantic: ">=2.5.0"
+  - anthropic: ">=0.18.0"
+  - crewai: ">=0.28.0"
+  - neo4j: ">=5.15.0"
+
+# TOGAF Compliance
+togaf_requirements:
+  framework: "TOGAF 10"
+  notation: "ArchiMate 3.2"
+  methodology: "Architecture Development Method (ADM)"
+  documentation: "UK English"
+
+# FAGAM Prohibition
+fagam_prohibited:
+  - "Google Cloud (GCP)"
+  - "AWS proprietary services"
+  - "Microsoft Azure"
+  - "HashiCorp Terraform (use OpenTofu)"
+  - "HashiCorp Vault (use OpenBao)"
+  - "Apple products"
+  - "Facebook/Meta products"
+
+fagam_alternatives:
+  terraform: "OpenTofu"
+  vault: "OpenBao"
+  alpine: "Chainguard Wolfi"
+  ubuntu: "Chainguard Wolfi"
+
+# Container Standards
+container_standards:
+  base_image: "cgr.dev/chainguard/wolfi-base:latest"
+  max_size: "50MB"
+  target_size: "15-40MB"
+  build_tool: "apko"
+  security: "Full SBOM + signatures"
+
+# Network Configuration
+network:
+  domain_zone: "10.100.6.0/24"
+  service_mesh: "Traefik + Consul"
+  api_gateway: "Traefik"
+
+# Integration Points
+integrations:
+  knowledge_graph: "META-KERAGR (Neo4j)"
+  documentation: "GitHub (bsw-arch/bsw-arch)"
+  ci_cd: "GitOps (Codeberg)"
+  secrets: "OpenBao"
+  identity: "Zitadel (OIDC)"
+
+# API Endpoints
+api_base_url: "http://localhost:8086/api/v1/axis"
+
+# Monitoring
+monitoring:
+  prometheus: true
+  grafana: true
+  alertmanager: true
+  metrics_port: 8000
+
+# Documentation
+documentation:
+  repository: "https://github.com/bsw-arch/bsw-arch"
+  guides: "docs/guides/AXIS-BOTS-SETUP-GUIDE.md"
+  reference: "docs/reference/AXIS-BOTS-API-KEYS.md"
+  architecture: "docs/architecture/domains/AXIS/"
+
+# Deployment
+deployment:
+  platform: "Kubernetes"
+  namespace: "axis-bots"
+  replicas: 1
+  strategy: "RollingUpdate"
+  git_workflow: "feature -> develop -> main"
