@@ -23,7 +23,7 @@ class PipelineBot(BotBase):
         name: str,
         config: Dict[str, Any],
         event_bus: EventBus,
-        state_manager: StateManager
+        state_manager: StateManager,
     ):
         """
         Initialize the pipeline bot.
@@ -47,18 +47,20 @@ class PipelineBot(BotBase):
 
             # Load saved state
             state = await self.state_manager.load_state(self.name)
-            self.pipelines = state.get('pipelines', {})
+            self.pipelines = state.get("pipelines", {})
 
             # Subscribe to pipeline events
-            self.event_bus.subscribe('pipeline.trigger', self._on_pipeline_trigger)
-            self.event_bus.subscribe('pipeline.cancel', self._on_pipeline_cancel)
+            self.event_bus.subscribe("pipeline.trigger", self._on_pipeline_trigger)
+            self.event_bus.subscribe("pipeline.cancel", self._on_pipeline_cancel)
 
             # Load default pipelines from config
-            default_pipelines = self.config.get('default_pipelines', [])
+            default_pipelines = self.config.get("default_pipelines", [])
             for pipeline_config in default_pipelines:
                 await self.register_pipeline(pipeline_config)
 
-            self.logger.info(f"PipelineBot initialized with {len(self.pipelines)} pipelines")
+            self.logger.info(
+                f"PipelineBot initialized with {len(self.pipelines)} pipelines"
+            )
             return True
 
         except Exception as e:
@@ -81,7 +83,7 @@ class PipelineBot(BotBase):
                 await self._publish_status()
 
                 # Sleep interval
-                await asyncio.sleep(self.config.get('check_interval', 30))
+                await asyncio.sleep(self.config.get("check_interval", 30))
 
             except Exception as e:
                 self.logger.error(f"Error in execution loop: {str(e)}", exc_info=True)
@@ -97,9 +99,7 @@ class PipelineBot(BotBase):
             await self._cancel_pipeline(pipeline_id)
 
         # Save state
-        await self.state_manager.save_state(self.name, {
-            'pipelines': self.pipelines
-        })
+        await self.state_manager.save_state(self.name, {"pipelines": self.pipelines})
 
         self.logger.info("PipelineBot cleanup complete")
 
@@ -113,26 +113,28 @@ class PipelineBot(BotBase):
         Returns:
             Pipeline ID
         """
-        pipeline_id = pipeline_config.get('id', f"pipeline_{len(self.pipelines)}")
+        pipeline_id = pipeline_config.get("id", f"pipeline_{len(self.pipelines)}")
 
         self.pipelines[pipeline_id] = {
-            'id': pipeline_id,
-            'name': pipeline_config.get('name', pipeline_id),
-            'stages': pipeline_config.get('stages', []),
-            'schedule': pipeline_config.get('schedule'),
-            'enabled': pipeline_config.get('enabled', True),
-            'created_at': datetime.now().isoformat(),
-            'last_run': None,
-            'run_count': 0
+            "id": pipeline_id,
+            "name": pipeline_config.get("name", pipeline_id),
+            "stages": pipeline_config.get("stages", []),
+            "schedule": pipeline_config.get("schedule"),
+            "enabled": pipeline_config.get("enabled", True),
+            "created_at": datetime.now().isoformat(),
+            "last_run": None,
+            "run_count": 0,
         }
 
         self.logger.info(f"Registered pipeline: {pipeline_id}")
-        await self.state_manager.save_state(self.name, {'pipelines': self.pipelines})
+        await self.state_manager.save_state(self.name, {"pipelines": self.pipelines})
 
         return pipeline_id
 
     @retry_async(max_attempts=3, delay=2.0)
-    async def run_pipeline(self, pipeline_id: str, context: Dict[str, Any] = None) -> bool:
+    async def run_pipeline(
+        self, pipeline_id: str, context: Dict[str, Any] = None
+    ) -> bool:
         """
         Execute a pipeline.
 
@@ -148,7 +150,7 @@ class PipelineBot(BotBase):
             return False
 
         pipeline = self.pipelines[pipeline_id]
-        if not pipeline['enabled']:
+        if not pipeline["enabled"]:
             self.logger.warning(f"Pipeline {pipeline_id} is disabled")
             return False
 
@@ -157,31 +159,37 @@ class PipelineBot(BotBase):
 
         try:
             # Publish pipeline start event
-            await self.event_bus.publish(Event(
-                event_type='pipeline.started',
-                source=self.name,
-                data={'pipeline_id': pipeline_id, 'context': context}
-            ))
+            await self.event_bus.publish(
+                Event(
+                    event_type="pipeline.started",
+                    source=self.name,
+                    data={"pipeline_id": pipeline_id, "context": context},
+                )
+            )
 
             # Execute each stage
-            for stage in pipeline['stages']:
-                stage_name = stage.get('name', 'unnamed')
-                self.logger.info(f"Executing stage: {stage_name} in pipeline {pipeline_id}")
+            for stage in pipeline["stages"]:
+                stage_name = stage.get("name", "unnamed")
+                self.logger.info(
+                    f"Executing stage: {stage_name} in pipeline {pipeline_id}"
+                )
 
                 # Simulate stage execution
                 await self._execute_stage(stage, context)
 
             # Update pipeline stats
-            pipeline['last_run'] = datetime.now().isoformat()
-            pipeline['run_count'] += 1
+            pipeline["last_run"] = datetime.now().isoformat()
+            pipeline["run_count"] += 1
             self.task_count += 1
 
             # Publish pipeline complete event
-            await self.event_bus.publish(Event(
-                event_type='pipeline.completed',
-                source=self.name,
-                data={'pipeline_id': pipeline_id, 'success': True}
-            ))
+            await self.event_bus.publish(
+                Event(
+                    event_type="pipeline.completed",
+                    source=self.name,
+                    data={"pipeline_id": pipeline_id, "success": True},
+                )
+            )
 
             self.logger.info(f"Pipeline {pipeline_id} completed successfully")
             return True
@@ -190,23 +198,29 @@ class PipelineBot(BotBase):
             self.logger.error(f"Pipeline {pipeline_id} failed: {str(e)}", exc_info=True)
             self.error_count += 1
 
-            await self.event_bus.publish(Event(
-                event_type='pipeline.failed',
-                source=self.name,
-                data={'pipeline_id': pipeline_id, 'error': str(e)}
-            ))
+            await self.event_bus.publish(
+                Event(
+                    event_type="pipeline.failed",
+                    source=self.name,
+                    data={"pipeline_id": pipeline_id, "error": str(e)},
+                )
+            )
 
             return False
 
         finally:
             if pipeline_id in self.running_pipelines:
                 self.running_pipelines.remove(pipeline_id)
-            await self.state_manager.save_state(self.name, {'pipelines': self.pipelines})
+            await self.state_manager.save_state(
+                self.name, {"pipelines": self.pipelines}
+            )
 
-    async def _execute_stage(self, stage: Dict[str, Any], context: Dict[str, Any]) -> None:
+    async def _execute_stage(
+        self, stage: Dict[str, Any], context: Dict[str, Any]
+    ) -> None:
         """Execute a single pipeline stage."""
-        stage_type = stage.get('type', 'task')
-        duration = stage.get('duration', 2)
+        # stage_type = stage.get("type", "task")  # Future: handle different types
+        duration = stage.get("duration", 2)
 
         # Simulate stage work
         await asyncio.sleep(duration)
@@ -221,7 +235,9 @@ class PipelineBot(BotBase):
     async def _monitor_running_pipelines(self) -> None:
         """Monitor health of running pipelines."""
         if self.running_pipelines:
-            self.logger.debug(f"Currently running {len(self.running_pipelines)} pipelines")
+            self.logger.debug(
+                f"Currently running {len(self.running_pipelines)} pipelines"
+            )
 
     async def _cancel_pipeline(self, pipeline_id: str) -> None:
         """Cancel a running pipeline."""
@@ -232,26 +248,24 @@ class PipelineBot(BotBase):
     async def _publish_status(self) -> None:
         """Publish bot status to event bus."""
         status = self.get_status()
-        status['running_pipelines'] = len(self.running_pipelines)
-        status['total_pipelines'] = len(self.pipelines)
+        status["running_pipelines"] = len(self.running_pipelines)
+        status["total_pipelines"] = len(self.pipelines)
 
-        await self.event_bus.publish(Event(
-            event_type='bot.status',
-            source=self.name,
-            data=status
-        ))
+        await self.event_bus.publish(
+            Event(event_type="bot.status", source=self.name, data=status)
+        )
 
     async def _on_pipeline_trigger(self, event: Event) -> None:
         """Handle pipeline trigger events."""
-        pipeline_id = event.data.get('pipeline_id')
-        context = event.data.get('context', {})
+        pipeline_id = event.data.get("pipeline_id")
+        context = event.data.get("context", {})
 
         if pipeline_id:
             await self.run_pipeline(pipeline_id, context)
 
     async def _on_pipeline_cancel(self, event: Event) -> None:
         """Handle pipeline cancel events."""
-        pipeline_id = event.data.get('pipeline_id')
+        pipeline_id = event.data.get("pipeline_id")
 
         if pipeline_id:
             await self._cancel_pipeline(pipeline_id)

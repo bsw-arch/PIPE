@@ -12,7 +12,7 @@ def retry_async(
     max_attempts: int = 3,
     delay: float = 1.0,
     backoff: float = 2.0,
-    exceptions: Tuple[Type[Exception], ...] = (Exception,)
+    exceptions: Tuple[Type[Exception], ...] = (Exception,),
 ):
     """
     Decorator for retrying async functions with exponential backoff.
@@ -28,6 +28,7 @@ def retry_async(
         async def my_function():
             # ... code that might fail ...
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs) -> Any:
@@ -41,7 +42,8 @@ def retry_async(
                     last_exception = e
                     if attempt == max_attempts:
                         logger.error(
-                            f"Function {func.__name__} failed after {max_attempts} attempts: {str(e)}"
+                            f"Function {func.__name__} failed after "
+                            f"{max_attempts} attempts: {str(e)}"
                         )
                         raise
 
@@ -57,4 +59,5 @@ def retry_async(
                 raise last_exception
 
         return wrapper
+
     return decorator

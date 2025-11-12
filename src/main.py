@@ -3,7 +3,6 @@
 import asyncio
 import signal
 import sys
-from pathlib import Path
 from typing import List
 
 from core.bot_base import BotBase
@@ -34,50 +33,49 @@ class BotOrchestrator:
         self.config = config
         self.bots: List[BotBase] = []
         self.event_bus = EventBus()
-        self.state_manager = StateManager(config.get('state_dir', './state'))
+        self.state_manager = StateManager(config.get("state_dir", "./state"))
         self.metrics = MetricsCollector()
         self.shutdown_event = asyncio.Event()
 
         # Set up logging
-        log_config = config.get('logging', {})
+        log_config = config.get("logging", {})
         setup_logging(
-            log_level=log_config.get('level', 'INFO'),
-            log_file=log_config.get('file')
+            log_level=log_config.get("level", "INFO"), log_file=log_config.get("file")
         )
 
     async def initialize_bots(self) -> None:
         """Initialize all configured bots."""
-        bot_configs = self.config.get('bots', {})
+        bot_configs = self.config.get("bots", {})
 
         # Create PipelineBot
-        if bot_configs.get('pipeline', {}).get('enabled', True):
+        if bot_configs.get("pipeline", {}).get("enabled", True):
             pipeline_bot = PipelineBot(
-                name='pipeline_bot',
-                config=bot_configs.get('pipeline', {}),
+                name="pipeline_bot",
+                config=bot_configs.get("pipeline", {}),
                 event_bus=self.event_bus,
-                state_manager=self.state_manager
+                state_manager=self.state_manager,
             )
             self.bots.append(pipeline_bot)
 
         # Create DataProcessorBot
-        if bot_configs.get('data_processor', {}).get('enabled', True):
+        if bot_configs.get("data_processor", {}).get("enabled", True):
             data_processor = DataProcessorBot(
-                name='data_processor_bot',
-                config=bot_configs.get('data_processor', {}),
+                name="data_processor_bot",
+                config=bot_configs.get("data_processor", {}),
                 event_bus=self.event_bus,
                 state_manager=self.state_manager,
-                metrics=self.metrics
+                metrics=self.metrics,
             )
             self.bots.append(data_processor)
 
         # Create MonitorBot
-        if bot_configs.get('monitor', {}).get('enabled', True):
+        if bot_configs.get("monitor", {}).get("enabled", True):
             monitor_bot = MonitorBot(
-                name='monitor_bot',
-                config=bot_configs.get('monitor', {}),
+                name="monitor_bot",
+                config=bot_configs.get("monitor", {}),
                 event_bus=self.event_bus,
                 state_manager=self.state_manager,
-                metrics=self.metrics
+                metrics=self.metrics,
             )
             self.bots.append(monitor_bot)
 
@@ -132,34 +130,32 @@ async def main():
 
     # Load configuration
     try:
-        config = load_config(config_dir='./config')
+        config = load_config(config_dir="./config")
     except Exception as e:
         print(f"Failed to load configuration: {str(e)}")
         print("Using default configuration")
         config = {
-            'state_dir': './state',
-            'logging': {
-                'level': 'INFO'
+            "state_dir": "./state",
+            "logging": {"level": "INFO"},
+            "bots": {
+                "pipeline": {
+                    "enabled": True,
+                    "check_interval": 30,
+                    "default_pipelines": [],
+                },
+                "data_processor": {
+                    "enabled": True,
+                    "num_workers": 3,
+                    "status_interval": 30,
+                },
+                "monitor": {
+                    "enabled": True,
+                    "monitor_interval": 60,
+                    "health_check_interval": 30,
+                    "silence_threshold_seconds": 300,
+                    "error_threshold": 10,
+                },
             },
-            'bots': {
-                'pipeline': {
-                    'enabled': True,
-                    'check_interval': 30,
-                    'default_pipelines': []
-                },
-                'data_processor': {
-                    'enabled': True,
-                    'num_workers': 3,
-                    'status_interval': 30
-                },
-                'monitor': {
-                    'enabled': True,
-                    'monitor_interval': 60,
-                    'health_check_interval': 30,
-                    'silence_threshold_seconds': 300,
-                    'error_threshold': 10
-                }
-            }
         }
 
     # Create orchestrator
