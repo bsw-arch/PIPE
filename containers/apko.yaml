@@ -1,0 +1,47 @@
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    - wolfi-base
+    - python-3.12
+    - py3-pip
+    - ca-certificates-bundle
+    - py3-requests
+    - py3-pyyaml
+    - py3-pydantic
+    - py3-crewai
+
+entrypoint:
+  command: /usr/bin/python3 -m pipe_artifact_bot
+
+accounts:
+  groups:
+    - groupname: nonroot
+      gid: 65532
+  users:
+    - username: nonroot
+      uid: 65532
+      gid: 65532
+  run-as: 65532
+
+archs:
+  - x86_64
+  - aarch64
+
+environment:
+  PATH: /usr/local/bin:/usr/bin
+  PYTHONUNBUFFERED: "1"
+  BOT_NAME: "pipe-artifact-bot"
+  BOT_DOMAIN: "PIPE"
+  BOT_PATTERN: "2"
+  BOT_TYPE: "ARTIFACT_MANAGEMENT"
+  KERAGR_URL: "http://localhost:3108"
+  COORDINATION_URL: "http://localhost:3111"
+  ARTIFACT_STORAGE_TYPE: "s3"
+  ARTIFACT_RETENTION_DAYS: "90"
+
+work-dir: /app
+
+cmd: /usr/bin/python3 -m pipe_artifact_bot

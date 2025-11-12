@@ -1,0 +1,28 @@
+apiVersion: v2
+name: pipe-artifact-bot
+description: PIPE Augmentic AI Task Management Bot - Ultra-minimal Wolfi containers with OpenBao secrets
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.24.0"
+
+keywords:
+  - axis
+  - augmentic-ai
+  - task-bot
+  - wolfi
+  - micro-containers
+  - openbao
+
+maintainers:
+  - name: PIPE Team
+    email: developer@bsw-tech.local
+
+sources:
+  - https://codeberg.org/PIPE-Bots/pipe-artifact-bot
+
+icon: https://codeberg.org/PIPE-Bots/pipe-artifact-bot/raw/branch/main/docs/icon.png
+
+annotations:
+  category: AI/ML
+  licenses: MIT
