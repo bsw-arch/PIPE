@@ -1,0 +1,61 @@
+# APKo Build Configuration - Base Image
+# ======================================
+# Builds ultra-minimal Wolfi container using APKo
+# Target: 3-5 MB
+
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    # Absolute minimum for Python runtime
+    - wolfi-baselayout
+    - ca-certificates
+    - busybox
+    - python-3.11
+    - python-3.11-base
+
+# Non-root execution (security)
+accounts:
+  groups:
+    - groupname: nonroot
+      gid: 65532
+  users:
+    - username: nonroot
+      uid: 65532
+      gid: 65532
+      shell: /sbin/nologin
+  run-as: 65532
+
+# Minimal environment
+environment:
+  PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  LANG: C.UTF-8
+
+# Entrypoint
+entrypoint:
+  command: /usr/bin/python3
+
+# Working directory
+work-dir: /app
+
+# Architecture support
+archs:
+  - x86_64
+  - aarch64
+
+# Image metadata
+annotations:
+  org.opencontainers.image.title: "PIPE Task Bot - Wolfi Base"
+  org.opencontainers.image.description: "Ultra-minimal Wolfi base (~3-5 MB)"
+  org.opencontainers.image.vendor: "PIPE Organization"
+  org.opencontainers.image.authors: "PIPE Team"
+  org.opencontainers.image.source: "https://codeberg.org/PIPE-Bots/pipe-task-bot"
+  org.opencontainers.image.licenses: "Apache-2.0"
+  com.axis.container.type: "base"
+  com.axis.container.size.target: "3-5MB"
+  com.axis.wolfi.minimal: "true"
+  com.axis.security.non-root: "true"
