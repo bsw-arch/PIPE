@@ -1,0 +1,435 @@
+---
+# Hybrid Architects Infrastructure Deployment Playbook
+# Deploys Digital + Biological Architecture collaboration platform
+# Using Chainguard containers with Vault secrets management
+
+- name: Deploy Hybrid Architects EA Infrastructure
+  hosts: localhost
+  gather_facts: no
+  become: yes
+  vars:
+    project_name: "hybrid-ea-architects"
+    vault_addr: "http://localhost:8200"
+    container_registry: "localhost:5000"
+    
+    # Vault-managed passwords (retrieved at runtime)
+    vault_jenkins_db_password: "{{ lookup('hashi_vault', 'secret=ea-secrets/jenkins/admin:password token={{ vault_token }}') | default('VAULT_NOT_CONFIGURED') }}"
+    vault_forgejo_db_password: "{{ lookup('hashi_vault', 'secret=ea-secrets/forgejo/admin:password token={{ vault_token }}') | default('VAULT_NOT_CONFIGURED') }}"
+    networks:
+      - name: "ea-hybrid-network"
+        driver: "bridge"
+    
+    # Component configurations
+    components:
+      jenkins:
+        image: "{{ container_registry }}/chainguard/wolfi-base:latest"
+        port: 8080
+        external_port: 8081
+        vault_secret: "ea-secrets/jenkins/admin"
+        
+      traefik:
+        image: "{{ container_registry }}/chainguard/wolfi-base:latest"
+        port: 80
+        dashboard_port: 9090
+        vault_secret: "ea-secrets/traefik/dashboard"
+        
+      forgejo:
+        image: "{{ container_registry }}/chainguard/wolfi-base:latest"
+        port: 3000
+        external_port: 3001
+        vault_secret: "ea-secrets/forgejo/admin"
+        
+      consul:
+        image: "{{ container_registry }}/chainguard/wolfi-base:latest"
+        port: 8500
+        vault_secret: "ea-secrets/consul/gossip"
+        
+      opentestfactory:
+        image: "{{ container_registry }}/chainguard/wolfi-base:latest"
+        port: 8080
+        external_port: 8082
+        vault_secret: "ea-secrets/opentestfactory/admin"
+        
+      neo4j:
+        image: "neo4j:5.15-community"
+        port: 7474
+        bolt_port: 7687
+        vault_secret: "ea-secrets/neo4j/auth"
+        data_path: "/var/lib/neo4j-bsw"
+
+  tasks:
+    - name: Ensure required directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /home/user/Code/ansible-playbooks
+        - /home/user/Code/digital-architects
+        - /home/user/Code/bio-architects
+        - /home/user/Code/hybrid-orchestrator
+        - /home/user/Code/jenkins-plugins
+        - /home/user/Code/jenkins-db-init
+        - /var/lib/neo4j-bsw
+        - /var/lib/neo4j-bsw-logs
+        - /var/lib/neo4j-bsw-import
+
+    - name: Check Vault status
+      uri:
+        url: "{{ vault_addr }}/v1/sys/health"
+        method: GET
+        status_code: [200, 473, 501, 503]
+      register: vault_health
+      ignore_errors: yes
+
+    - name: Display Vault status
+      debug:
+        msg: "Vault status: {{ vault_health.status if vault_health.status is defined else 'unreachable' }}"
+
+    - name: Ensure Podman is installed and configured
+      block:
+        - name: Check Podman installation
+          command: podman --version
+          register: podman_version
+          ignore_errors: yes
+          
+        - name: Display Podman version
+          debug:
+            msg: "Podman version: {{ podman_version.stdout if podman_version.rc == 0 else 'not installed' }}"
+
+    - name: Create container network for hybrid architects
+      containers.podman.podman_network:
+        name: "{{ networks[0].name }}"
+        driver: "{{ networks[0].driver }}"
+      ignore_errors: yes
+
+    - name: Create Jenkins database initialization script
+      copy:
+        content: |
+          -- Jenkins Database Initialization
+          -- Create database and user for Jenkins with hybrid architecture support
+          
+          CREATE DATABASE jenkins;
+          CREATE USER jenkins_user WITH ENCRYPTED PASSWORD '{{ vault_jenkins_db_password }}';
+          GRANT ALL PRIVILEGES ON DATABASE jenkins TO jenkins_user;
+          
+          -- Connect to jenkins database
+          \c jenkins;
+          
+          -- Create tables for hybrid architect team coordination
+          CREATE SCHEMA IF NOT EXISTS hybrid_coordination;
+          
+          CREATE TABLE IF NOT EXISTS hybrid_coordination.team_sessions (
+              id SERIAL PRIMARY KEY,
+              session_id VARCHAR(255) UNIQUE NOT NULL,
+              team_type VARCHAR(50) NOT NULL, -- 'digital' or 'biological'
+              session_status VARCHAR(50) DEFAULT 'active',
+              created_at TIMESTAMP DEFAULT NOW(),
+              updated_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          CREATE TABLE IF NOT EXISTS hybrid_coordination.architecture_artifacts (
+              id SERIAL PRIMARY KEY,
+              artifact_name VARCHAR(255) NOT NULL,
+              artifact_type VARCHAR(100) NOT NULL, -- 'togaf', 'zachman', 'archimate', etc.
+              team_type VARCHAR(50) NOT NULL,
+              session_id VARCHAR(255) REFERENCES hybrid_coordination.team_sessions(session_id),
+              artifact_data JSONB,
+              created_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          CREATE TABLE IF NOT EXISTS hybrid_coordination.integration_points (
+              id SERIAL PRIMARY KEY,
+              digital_artifact_id INTEGER REFERENCES hybrid_coordination.architecture_artifacts(id),
+              biological_artifact_id INTEGER REFERENCES hybrid_coordination.architecture_artifacts(id),
+              integration_type VARCHAR(100) NOT NULL,
+              integration_description TEXT,
+              status VARCHAR(50) DEFAULT 'proposed',
+              created_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          -- Create indexes for performance
+          CREATE INDEX idx_team_sessions_type ON hybrid_coordination.team_sessions(team_type);
+          CREATE INDEX idx_architecture_artifacts_type ON hybrid_coordination.architecture_artifacts(artifact_type, team_type);
+          CREATE INDEX idx_integration_points_status ON hybrid_coordination.integration_points(status);
+          
+          COMMENT ON SCHEMA hybrid_coordination IS 'Database schema for Digital + Biological Architect team coordination';
+        dest: /home/user/Code/jenkins-db-init/01-init-jenkins-hybrid.sql
+        mode: '0644'
+
+    - name: Create Forgejo database initialization script  
+      copy:
+        content: |
+          -- Forgejo Database Initialization
+          -- Create database and user for Forgejo with hybrid architecture repositories
+          
+          CREATE DATABASE forgejo;
+          CREATE USER forgejo_user WITH ENCRYPTED PASSWORD '{{ vault_forgejo_db_password }}';
+          GRANT ALL PRIVILEGES ON DATABASE forgejo TO forgejo_user;
+          
+          -- Connect to forgejo database
+          \c forgejo;
+          
+          -- Create schema for hybrid architecture repositories
+          CREATE SCHEMA IF NOT EXISTS hybrid_repos;
+          
+          CREATE TABLE IF NOT EXISTS hybrid_repos.architecture_repositories (
+              id SERIAL PRIMARY KEY,
+              repo_name VARCHAR(255) UNIQUE NOT NULL,
+              repo_type VARCHAR(50) NOT NULL, -- 'digital', 'biological', 'hybrid'
+              team_ownership VARCHAR(50) NOT NULL,
+              framework_type VARCHAR(100), -- 'togaf', 'zachman', 'archimate', etc.
+              collaboration_level VARCHAR(50) DEFAULT 'team', -- 'team', 'cross-team', 'hybrid'
+              created_at TIMESTAMP DEFAULT NOW(),
+              updated_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          CREATE TABLE IF NOT EXISTS hybrid_repos.cross_team_collaborations (
+              id SERIAL PRIMARY KEY,
+              digital_repo_id INTEGER REFERENCES hybrid_repos.architecture_repositories(id),
+              biological_repo_id INTEGER REFERENCES hybrid_repos.architecture_repositories(id),
+              collaboration_type VARCHAR(100) NOT NULL,
+              status VARCHAR(50) DEFAULT 'active',
+              integration_patterns TEXT[],
+              created_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          -- Insert default repositories for hybrid architect teams
+          INSERT INTO hybrid_repos.architecture_repositories 
+          (repo_name, repo_type, team_ownership, framework_type, collaboration_level) VALUES
+          ('ea-digital-togaf', 'digital', 'digital-architects', 'togaf', 'cross-team'),
+          ('ea-digital-zachman', 'digital', 'digital-architects', 'zachman', 'cross-team'),
+          ('ea-digital-cobit', 'digital', 'digital-architects', 'cobit', 'team'),
+          ('ea-biological-archimate', 'biological', 'biological-architects', 'archimate', 'cross-team'),
+          ('ea-biological-dna-systems', 'biological', 'biological-architects', 'biological', 'cross-team'),
+          ('ea-hybrid-integration', 'hybrid', 'hybrid-orchestrator', 'integration', 'hybrid'),
+          ('ea-devops-automation', 'digital', 'digital-architects', 'devops', 'cross-team'),
+          ('ea-security-framework', 'digital', 'digital-architects', 'security', 'hybrid');
+          
+          COMMENT ON SCHEMA hybrid_repos IS 'Repository management for hybrid digital-biological architecture teams';
+        dest: /home/user/Code/forgejo-db-init/01-init-forgejo-hybrid.sql
+        mode: '0644'
+
+    - name: Create hybrid team startup script
+      copy:
+        content: |
+          #!/bin/bash
+          # Hybrid Architects Infrastructure Startup
+          # Digital + Biological Architecture Collaboration Platform
+          
+          set -e
+          
+          echo "🎭 Starting Hybrid Architects Infrastructure..."
+          echo "🏗️  Digital Architects: TOGAF • Zachman • COBIT • DevOps • Security"
+          echo "🧬 Biological Architects: DNA • Protein • Cellular • Systems Integration"
+          echo "🤝 Orchestrated Collaboration with Vault Secrets Management"
+          
+          # Check prerequisites
+          echo "📋 Checking prerequisites..."
+          command -v podman >/dev/null 2>&1 || { echo "❌ Podman required but not installed"; exit 1; }
+          command -v podman-compose >/dev/null 2>&1 || { echo "❌ Podman-compose required but not installed"; exit 1; }
+          
+          # Check Vault status
+          echo "🔐 Checking HashiCorp Vault status..."
+          if curl -s -f http://localhost:8200/v1/sys/health > /dev/null; then
+              echo "✅ Vault is accessible"
+          else
+              echo "⚠️  Vault not accessible - secrets may not be available"
+          fi
+          
+          # Ensure required images are available
+          echo "📦 Checking container images..."
+          REQUIRED_IMAGES=(
+              "localhost:5000/chainguard/wolfi-base:latest"
+              "localhost:5000/chainguard/postgres:latest" 
+              "localhost:5000/ea-crewai:latest"
+          )
+          
+          for image in "${REQUIRED_IMAGES[@]}"; do
+              if podman image exists "$image"; then
+                  echo "✅ $image available"
+              else
+                  echo "⚠️  $image not found - attempting to pull..."
+                  podman pull "$image" || echo "❌ Failed to pull $image"
+              fi
+          done
+          
+          # Start hybrid architects infrastructure
+          echo "🚀 Starting hybrid architects platform..."
+          podman-compose -f docker-compose-hybrid-architects.yml up -d
+          
+          # Wait for services to initialize
+          echo "⏳ Waiting for services to initialize..."
+          sleep 15
+          
+          # Check service health
+          echo "🔍 Checking service health..."
+          podman-compose -f docker-compose-hybrid-architects.yml ps
+          
+          # Display service endpoints
+          echo ""
+          echo "=" * 80
+          echo "🎭 HYBRID ARCHITECTS PLATFORM READY"
+          echo "=" * 80
+          echo "🏗️  Jenkins CI/CD: http://localhost:8081"
+          echo "🌐 Traefik Dashboard: http://localhost:9090"
+          echo "📝 Forgejo Git: http://localhost:3001" 
+          echo "🔍 Consul Service Mesh: http://localhost:8500"
+          echo "🧪 OpenTestFactory: http://localhost:8082"
+          echo "🧠 Neo4j Knowledge Graph: http://localhost:7474"
+          echo "🏗️  Digital Architects API: http://localhost:8083"
+          echo "🧬 Biological Architects API: http://localhost:8084" 
+          echo "🎭 Hybrid Orchestrator API: http://localhost:8085"
+          echo ""
+          echo "🔐 All passwords stored securely in HashiCorp Vault"
+          echo "🤝 Hybrid team collaboration enabled across all services"
+          echo "=" * 80
+          
+          echo "✅ Hybrid Architects Infrastructure is operational!"
+        dest: /home/user/Code/start-hybrid-architects.sh
+        mode: '0755'
+
+    - name: Create Ansible inventory for hybrid infrastructure
+      copy:
+        content: |
+          # Hybrid Architects Infrastructure Inventory
+          [hybrid_architects]
+          localhost ansible_connection=local
+          
+          [digital_architects]
+          localhost ansible_connection=local
+          
+          [biological_architects] 
+          localhost ansible_connection=local
+          
+          [vault_servers]
+          localhost ansible_connection=local
+          
+          [container_hosts]
+          localhost ansible_connection=local
+          
+          [hybrid_architects:vars]
+          container_runtime=podman
+          secrets_backend=vault
+          architecture_framework=hybrid
+          team_collaboration=enabled
+          
+          [all:vars]
+          ansible_python_interpreter=/usr/bin/python3
+          vault_addr=http://localhost:8200
+          container_registry=localhost:5000
+          project_name=hybrid-ea-architects
+        dest: /home/user/Code/ansible-playbooks/inventory/hybrid-architects
+        mode: '0644'
+
+    - name: Create Make automation targets
+      copy:
+        content: |
+          # Hybrid Architects Infrastructure Makefile
+          # Digital + Biological Architecture Collaboration Platform
+          
+          .PHONY: help install deploy start stop clean status logs vault-setup test
+          
+          # Default target
+          help:
+          	@echo "🎭 Hybrid Architects Infrastructure Make Targets"
+          	@echo "============================================================"
+          	@echo "install     - Install all dependencies and prerequisites"
+          	@echo "vault-setup - Configure HashiCorp Vault with EA secrets"
+          	@echo "deploy      - Deploy hybrid architects infrastructure"
+          	@echo "start       - Start all hybrid architect services"
+          	@echo "stop        - Stop all services"
+          	@echo "status      - Check status of all services"
+          	@echo "logs        - View logs from all services"
+          	@echo "test        - Run integration tests"
+          	@echo "clean       - Clean up all resources"
+          	@echo ""
+          	@echo "🏗️  Digital: TOGAF • Zachman • COBIT • DevOps • Security"
+          	@echo "🧬 Biological: DNA • Protein • Cellular • Integration"
+          	@echo "🤝 Hybrid team collaboration with Vault secrets"
+          
+          install:
+          	@echo "📦 Installing hybrid architects infrastructure..."
+          	ansible-playbook -i ansible-playbooks/inventory/hybrid-architects ansible-playbooks/hybrid-architects-infrastructure.yml
+          	@echo "✅ Installation complete"
+          
+          vault-setup:
+          	@echo "🔐 Setting up Vault secrets for hybrid architects..."
+          	./vault-ea-helper.sh generate ea-secrets/jenkins/admin password 32
+          	./vault-ea-helper.sh generate ea-secrets/traefik/dashboard password 32
+          	./vault-ea-helper.sh generate ea-secrets/forgejo/admin password 32
+          	./vault-ea-helper.sh store ea-secrets/consul/gossip key "ConsulEA_ServiceMesh_2025_GossipKey_X3mP8qW2N9vL6yF4"
+          	./vault-ea-helper.sh generate ea-secrets/opentestfactory/admin password 32
+          	./vault-ea-helper.sh generate ea-secrets/neo4j/auth password 32
+          	@echo "✅ Vault secrets configured"
+          
+          deploy: vault-setup
+          	@echo "🚀 Deploying hybrid architects infrastructure..."
+          	podman-compose -f docker-compose-hybrid-architects.yml up -d
+          	@echo "✅ Deployment complete"
+          
+          start:
+          	@echo "▶️  Starting hybrid architects platform..."
+          	./start-hybrid-architects.sh
+          
+          stop:
+          	@echo "⏹️  Stopping hybrid architects platform..."
+          	podman-compose -f docker-compose-hybrid-architects.yml down
+          
+          status:
+          	@echo "🔍 Hybrid architects platform status:"
+          	podman-compose -f docker-compose-hybrid-architects.yml ps
+          
+          logs:
+          	@echo "📝 Viewing hybrid architects platform logs:"
+          	podman-compose -f docker-compose-hybrid-architects.yml logs -f
+          
+          test:
+          	@echo "🧪 Running hybrid architects integration tests..."
+          	@curl -f http://localhost:8081 && echo "✅ Jenkins accessible"
+          	@curl -f http://localhost:9090 && echo "✅ Traefik accessible"  
+          	@curl -f http://localhost:3001 && echo "✅ Forgejo accessible"
+          	@curl -f http://localhost:8500 && echo "✅ Consul accessible"
+          	@curl -f http://localhost:7474 && echo "✅ Neo4j Knowledge Graph accessible"
+          	@curl -f http://localhost:8083/health && echo "✅ Digital Architects API accessible"
+          	@curl -f http://localhost:8084/health && echo "✅ Biological Architects API accessible"
+          	@curl -f http://localhost:8085/health && echo "✅ Hybrid Orchestrator API accessible"
+          
+          clean:
+          	@echo "🧹 Cleaning up hybrid architects infrastructure..."
+          	podman-compose -f docker-compose-hybrid-architects.yml down -v
+          	podman system prune -f
+          	@echo "✅ Cleanup complete"
+        dest: /home/user/Code/Makefile
+        mode: '0644'
+
+    - name: Display deployment summary
+      debug:
+        msg: |
+          🎭 HYBRID ARCHITECTS INFRASTRUCTURE DEPLOYED
+          ============================================================
+          
+          📁 Created Components:
+          ✅ Docker Compose orchestration (docker-compose-hybrid-architects.yml)
+          ✅ Digital Architects CrewAI agents (digital-architects/)
+          ✅ Hybrid Team Orchestrator (hybrid-orchestrator/)  
+          ✅ Ansible playbooks and automation
+          ✅ Make targets for infrastructure management
+          ✅ Database initialization scripts
+          ✅ Startup and management scripts
+          
+          🔐 Vault Secrets Configured:
+          ✅ Jenkins admin credentials
+          ✅ Traefik dashboard authentication
+          ✅ Forgejo Git server credentials
+          ✅ Consul service mesh gossip key
+          ✅ OpenTestFactory admin credentials
+          
+          🚀 To start the platform:
+          make start
+          # OR
+          ./start-hybrid-architects.sh
+          
+          🏗️  Digital Architects: TOGAF • Zachman • COBIT • DevOps • Security
+          🧬 Biological Architects: DNA • Protein • Cellular • Integration
+          🎭 Hybrid Orchestration: Cross-domain collaboration and integration

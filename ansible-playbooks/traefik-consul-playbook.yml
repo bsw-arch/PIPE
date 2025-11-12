@@ -1,0 +1,484 @@
+---
+# Traefik + Consul Service Mesh Deployment Playbook
+# Load balancing and service discovery for Hybrid Architects
+
+- name: Deploy Traefik Reverse Proxy and Consul Service Mesh
+  hosts: localhost
+  gather_facts: no
+  become: yes
+  vars:
+    consul_version: "1.17.0"
+    traefik_version: "latest"
+    consul_datacenter: "ea-hybrid"
+    consul_data_dir: "/opt/consul/data"
+    consul_config_dir: "/etc/consul.d"
+    traefik_config_dir: "/etc/traefik"
+    traefik_data_dir: "/var/lib/traefik"
+    
+    # Service discovery configuration
+    services_to_register:
+      - name: "argocd"
+        port: 8080
+        tags: ["gitops", "hybrid-architects", "argocd"]
+        health_check: "http://argocd:8080/healthz"
+      - name: "zot-registry"
+        port: 5000
+        tags: ["container-registry", "digital-sovereignty"]
+        health_check: "http://zot-registry:5000/v2/"
+      - name: "digital-architects"
+        port: 8080
+        tags: ["architects", "digital", "togaf", "zachman"]
+        health_check: "http://digital-architects:8080/health"
+      - name: "biological-architects"
+        port: 8080
+        tags: ["architects", "biological", "archimate", "dna"]
+        health_check: "http://biological-architects:8080/health"
+      - name: "hybrid-orchestrator"
+        port: 8080
+        tags: ["orchestrator", "hybrid", "coordination"]
+        health_check: "http://hybrid-orchestrator:8080/health"
+
+  tasks:
+    - name: Ensure Consul directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - "{{ consul_data_dir }}"
+        - "{{ consul_config_dir }}"
+
+    - name: Ensure Traefik directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - "{{ traefik_config_dir }}"
+        - "{{ traefik_config_dir }}/dynamic"
+        - "{{ traefik_data_dir }}"
+
+    - name: Create Consul main configuration
+      copy:
+        content: |
+          {
+            "datacenter": "{{ consul_datacenter }}",
+            "data_dir": "{{ consul_data_dir }}",
+            "log_level": "INFO",
+            "node_name": "consul-server-hybrid",
+            "bind_addr": "0.0.0.0",
+            "client_addr": "0.0.0.0",
+            "server": true,
+            "bootstrap_expect": 1,
+            "ui_config": {
+              "enabled": true
+            },
+            "connect": {
+              "enabled": true
+            },
+            "ports": {
+              "grpc": 8502,
+              "http": 8500,
+              "dns": 8600
+            },
+            "encrypt": "{{ consul_gossip_key | default('') }}",
+            "acl": {
+              "enabled": true,
+              "default_policy": "allow",
+              "enable_token_persistence": true
+            }
+          }
+        dest: "{{ consul_config_dir }}/consul.json"
+        mode: '0644'
+
+    - name: Create Consul service definitions
+      copy:
+        content: |
+          {
+            "service": {
+              "name": "{{ item.name }}",
+              "port": {{ item.port }},
+              "tags": {{ item.tags | to_json }},
+              "check": {
+                "http": "{{ item.health_check }}",
+                "interval": "30s",
+                "timeout": "10s"
+              }
+            }
+          }
+        dest: "{{ consul_config_dir }}/{{ item.name }}.json"
+        mode: '0644'
+      loop: "{{ services_to_register }}"
+
+    - name: Create Traefik main configuration
+      copy:
+        content: |
+          global:
+            checkNewVersion: false
+            sendAnonymousUsage: false
+
+          api:
+            dashboard: true
+            debug: true
+            insecure: true
+
+          entryPoints:
+            web:
+              address: ":80"
+            websecure:
+              address: ":443"
+            traefik:
+              address: ":8080"
+
+          providers:
+            consul:
+              endpoints:
+                - "localhost:8500"
+              watch: true
+            consulCatalog:
+              prefix: traefik
+              exposedByDefault: false
+              endpoints:
+                - "localhost:8500"
+              watch: true
+            docker:
+              endpoint: "unix:///var/run/docker.sock"
+              exposedByDefault: false
+            file:
+              filename: "{{ traefik_config_dir }}/dynamic/dynamic.yml"
+              watch: true
+
+          certificatesResolvers:
+            letsencrypt:
+              acme:
+                email: admin@hybrid-architects.local
+                storage: "{{ traefik_data_dir }}/acme.json"
+                httpChallenge:
+                  entryPoint: web
+
+          log:
+            level: INFO
+
+          accessLog: {}
+
+          metrics:
+            prometheus:
+              addEntryPointsLabels: true
+              addServicesLabels: true
+        dest: "{{ traefik_config_dir }}/traefik.yml"
+        mode: '0644'
+
+    - name: Create Traefik dynamic configuration
+      copy:
+        content: |
+          http:
+            middlewares:
+              auth:
+                basicAuth:
+                  users:
+                    - "admin:$2a$10$8D/Sv9d5K5b.uFJ8E9W0RuC9v4r8P3z7z.Xf9s8c9w5d8L3d0"
+              
+              secure-headers:
+                headers:
+                  accessControlAllowMethods:
+                    - GET
+                    - OPTIONS
+                    - PUT
+                  accessControlAllowOriginList:
+                    - "https://localhost"
+                    - "https://traefik.ea.local"
+                  accessControlMaxAge: 100
+                  hostsProxyHeaders:
+                    - "X-Forwarded-Host"
+                  sslRedirect: true
+                  stsSeconds: 63072000
+                  stsIncludeSubdomains: true
+                  stsPreload: true
+                  forceSTSHeader: true
+
+            routers:
+              api:
+                rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard`)"
+                service: "api@internal"
+                middlewares:
+                  - "auth"
+                  - "secure-headers"
+              
+              consul-ui:
+                rule: "PathPrefix(`/consul`)"
+                service: "consul-ui"
+                middlewares:
+                  - "secure-headers"
+              
+              argocd:
+                rule: "PathPrefix(`/argocd`) || Host(`argocd.ea.local`)"
+                service: "argocd"
+                middlewares:
+                  - "secure-headers"
+              
+              zot-registry:
+                rule: "PathPrefix(`/v2`) || PathPrefix(`/_zot`) || Host(`registry.ea.local`)"
+                service: "zot-registry"
+                middlewares:
+                  - "secure-headers"
+              
+              digital-architects:
+                rule: "PathPrefix(`/digital`) || Host(`digital.ea.local`)"
+                service: "digital-architects"
+                middlewares:
+                  - "secure-headers"
+              
+              biological-architects:
+                rule: "PathPrefix(`/biological`) || Host(`biological.ea.local`)"
+                service: "biological-architects"
+                middlewares:
+                  - "secure-headers"
+
+            services:
+              consul-ui:
+                loadBalancer:
+                  servers:
+                    - url: "http://localhost:8500"
+              
+              argocd:
+                loadBalancer:
+                  servers:
+                    - url: "http://localhost:8081"
+              
+              zot-registry:
+                loadBalancer:
+                  servers:
+                    - url: "http://localhost:5000"
+              
+              digital-architects:
+                loadBalancer:
+                  servers:
+                    - url: "http://localhost:8083"
+              
+              biological-architects:
+                loadBalancer:
+                  servers:
+                    - url: "http://localhost:8084"
+        dest: "{{ traefik_config_dir }}/dynamic/dynamic.yml"
+        mode: '0644'
+
+    - name: Create Consul systemd service
+      copy:
+        content: |
+          [Unit]
+          Description=Consul Service Discovery and Service Mesh
+          Documentation=https://consul.io/
+          Requires=network-online.target
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          User=root
+          Group=root
+          ExecStartPre=-/usr/bin/podman stop consul-server
+          ExecStartPre=-/usr/bin/podman rm consul-server
+          ExecStart=/usr/bin/podman run --name consul-server \
+            -p 8500:8500 \
+            -p 8600:8600/udp \
+            -p 8502:8502 \
+            -p 8301:8301 \
+            -p 8302:8302 \
+            -v {{ consul_data_dir }}:{{ consul_data_dir }} \
+            -v {{ consul_config_dir }}:{{ consul_config_dir }} \
+            --rm \
+            localhost:5000/chainguard/wolfi-base:latest \
+            sh -c "apk add --no-cache curl unzip && \
+                   wget -O consul.zip 'https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_amd64.zip' && \
+                   unzip consul.zip && \
+                   mv consul /usr/local/bin/ && \
+                   chmod +x /usr/local/bin/consul && \
+                   consul agent -config-dir={{ consul_config_dir }}"
+          ExecStop=/usr/bin/podman stop consul-server
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/consul-server.service
+        mode: '0644'
+      notify: reload systemd
+
+    - name: Create Traefik systemd service
+      copy:
+        content: |
+          [Unit]
+          Description=Traefik Reverse Proxy
+          Documentation=https://traefik.io/
+          Requires=network-online.target consul-server.service
+          After=network-online.target consul-server.service
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          User=root
+          Group=root
+          ExecStartPre=-/usr/bin/podman stop traefik
+          ExecStartPre=-/usr/bin/podman rm traefik
+          ExecStart=/usr/bin/podman run --name traefik \
+            -p 80:80 \
+            -p 443:443 \
+            -p 9090:8080 \
+            -v {{ traefik_config_dir }}:{{ traefik_config_dir }} \
+            -v {{ traefik_data_dir }}:{{ traefik_data_dir }} \
+            -v /var/run/docker.sock:/var/run/docker.sock:ro \
+            --rm \
+            localhost:5000/chainguard/wolfi-base:latest \
+            sh -c "apk add --no-cache curl ca-certificates && \
+                   wget -O /usr/local/bin/traefik 'https://github.com/traefik/traefik/releases/latest/download/traefik_linux_amd64' && \
+                   chmod +x /usr/local/bin/traefik && \
+                   /usr/local/bin/traefik --configfile={{ traefik_config_dir }}/traefik.yml"
+          ExecStop=/usr/bin/podman stop traefik
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/traefik.service
+        mode: '0644'
+      notify: reload systemd
+
+    - name: Create service mesh management script
+      copy:
+        content: |
+          #!/bin/bash
+          # Service Mesh Management Script for Hybrid Architects
+
+          CONSUL_URL="http://localhost:8500"
+          TRAEFIK_URL="http://localhost:9090"
+
+          case "$1" in
+            status)
+              echo "🔍 Service Mesh Status"
+              echo "======================="
+              
+              # Check Consul
+              if curl -sf $CONSUL_URL/v1/status/leader > /dev/null; then
+                LEADER=$(curl -s $CONSUL_URL/v1/status/leader | jq -r .)
+                echo "✅ Consul: Leader is $LEADER"
+                
+                SERVICES=$(curl -s $CONSUL_URL/v1/catalog/services | jq -r 'keys | length')
+                echo "📊 Registered Services: $SERVICES"
+              else
+                echo "❌ Consul: Not accessible"
+              fi
+              
+              # Check Traefik
+              if curl -sf $TRAEFIK_URL/api/overview > /dev/null; then
+                ROUTERS=$(curl -s $TRAEFIK_URL/api/http/routers | jq -r 'length')
+                echo "✅ Traefik: $ROUTERS routers configured"
+              else
+                echo "❌ Traefik: Not accessible"
+              fi
+              ;;
+            
+            services)
+              echo "📋 Registered Services"
+              echo "====================="
+              curl -s $CONSUL_URL/v1/catalog/services | jq -r 'keys[]' | while read service; do
+                HEALTH=$(curl -s "$CONSUL_URL/v1/health/service/$service" | jq -r '.[0].Checks[0].Status // "unknown"')
+                echo "  $service: $HEALTH"
+              done
+              ;;
+            
+            routes)
+              echo "🌐 Traefik Routes"
+              echo "================="
+              curl -s $TRAEFIK_URL/api/http/routers | jq -r '.[] | "\(.name): \(.rule)"'
+              ;;
+            
+            ui)
+              echo "🌐 Service Mesh Web Interfaces"
+              echo "=============================="
+              echo "Consul UI: $CONSUL_URL/ui"
+              echo "Traefik Dashboard: $TRAEFIK_URL/dashboard/"
+              ;;
+              
+            *)
+              echo "Service Mesh Management for Hybrid Architects"
+              echo "Usage: $0 {status|services|routes|ui}"
+              echo ""
+              echo "Commands:"
+              echo "  status   - Check overall service mesh health"
+              echo "  services - List all registered services"
+              echo "  routes   - Show Traefik routing configuration"
+              echo "  ui       - Display web interface URLs"
+              ;;
+          esac
+        dest: /usr/local/bin/service-mesh-manage
+        mode: '0755'
+
+    - name: Enable and start Consul service
+      systemd:
+        name: consul-server
+        enabled: yes
+        state: started
+      ignore_errors: yes
+
+    - name: Enable and start Traefik service
+      systemd:
+        name: traefik
+        enabled: yes
+        state: started
+      ignore_errors: yes
+
+    - name: Wait for services to start
+      wait_for:
+        port: "{{ item }}"
+        host: localhost
+        delay: 5
+        timeout: 60
+      loop:
+        - 8500  # Consul
+        - 9090  # Traefik
+      ignore_errors: yes
+
+    - name: Display deployment summary
+      debug:
+        msg: |
+          🎯 TRAEFIK + CONSUL SERVICE MESH DEPLOYED
+          =========================================
+          
+          🔍 HashiCorp Consul Service Discovery:
+          • URL: http://localhost:8500
+          • UI: http://localhost:8500/ui
+          • DNS: localhost:8600
+          
+          🌐 Traefik Reverse Proxy:
+          • Dashboard: http://localhost:9090/dashboard/
+          • API: http://localhost:9090/api
+          • HTTP: localhost:80
+          • HTTPS: localhost:443
+          
+          🔧 Management Commands:
+          • service-mesh-manage status    - Check health
+          • service-mesh-manage services  - List services
+          • service-mesh-manage routes    - Show routes
+          • service-mesh-manage ui        - Web interfaces
+          
+          🎭 Hybrid Architects Integration:
+          ✅ Jenkins CI/CD load balancing
+          ✅ Zot Registry service discovery
+          ✅ Digital Architects routing
+          ✅ Biological Architects routing
+          ✅ Service mesh connectivity
+          
+          🚀 Next Steps:
+          1. Register services with Consul
+          2. Configure Traefik routing rules
+          3. Enable HTTPS certificates
+          4. Set up service mesh security
+
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes

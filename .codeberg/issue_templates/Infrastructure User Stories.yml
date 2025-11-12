@@ -1,0 +1,63 @@
+name: "Infrastructure User Stories Template"
+about: "Create a new Infrastructure User Stories"
+title: "[INFRASTRUCTURE USER STORIES] "
+labels: 
+  - "infrastructure user stories"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Infrastructure User Stories Information
+        Please provide the following information to create a new Infrastructure User Stories.
+  
+  - type: input
+    id: parent
+    attributes:
+      label: "Parent Issue"
+      description: "Link to parent issue (if applicable)"
+      placeholder: "e.g., helix-nova/bsw-features#123"
+    validations:
+      required: false
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "Detailed description of the Infrastructure User Stories"
+      placeholder: "Enter description here..."
+    validations:
+      required: true
+  
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "What criteria must be met for this Infrastructure User Stories to be accepted?"
+      placeholder: "- [ ] Criteria 1\n- [ ] Criteria 2\n- [ ] Criteria 3"
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      description: "Priority of this Infrastructure User Stories"
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Checks"
+      description: "Please ensure the following checks are completed"
+      options:
+        - label: "I have linked to the parent issue (if applicable)"
+          required: false
+        - label: "I have provided detailed acceptance criteria"
+          required: true
+        - label: "I have set the appropriate priority"
+          required: true

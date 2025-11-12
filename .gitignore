@@ -1,0 +1,253 @@
+# OpenTofu/Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+terraform.tfplan
+terraform.tfstate.backup
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# OpenTofu/Terraform binaries and caches
+.terragrunt-cache/
+.terraform-version
+terraform
+tofu
+terragrunt
+tflint
+tfsec
+terraform-docs
+infracost
+checkov
+
+# Terraform provider binaries
+terraform-provider-*
+.terraform.d/
+plugins/
+
+# Ansible
+*.retry
+.vault_pass
+.vault_password
+
+# Ansible binaries and collections
+ansible
+ansible-playbook
+ansible-galaxy
+ansible-vault
+ansible-config
+ansible-inventory
+collections/
+roles/downloaded/
+.ansible/
+
+# Container Build Context
+build/
+tmp/
+temp/
+
+# Container tools and binaries
+podman
+docker
+buildah
+skopeo
+crun
+runc
+containerd
+dockerd
+docker-compose
+podman-compose
+
+# Container runtime files
+.docker/
+.podman/
+containers/
+volumes/
+networks/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Secrets and keys
+*.key
+*.pem
+*.p12
+*.der
+*.crt
+*.csr
+secrets/
+keys/
+
+# Images and media files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.ico
+*.svg
+*.webp
+*.avif
+
+# Document files that may contain images
+*.pdf
+*.docx
+*.pptx
+*.xlsx
+
+# Screenshot and screen recording files
+Screenshot*.png
+Screen*.png
+*screenshot*
+*screen-capture*
+*screencapture*
+Clip*.mp4
+
+# BSW-ARCH specific
+vault-unseal-keys-*.json
+.ea-persistent-todos.json
+
+# Container image tarballs and exports
+*.tar
+*.tar.gz
+*.tar.xz
+docker-image-*.tar
+podman-image-*.tar
+
+# Large binary files
+*.bin
+*.exe
+*.dll
+*.so
+*.dylib
+
+# DevSecOps tool binaries
+gitleaks
+semgrep
+trivy
+syft
+grype
+cosign
+falco
+nuclei
+zap
+sonarqube
+
+# Monitoring and observability binaries
+prometheus
+grafana
+grafana-server
+alertmanager
+node_exporter
+blackbox_exporter
+loki
+promtail
+jaeger
+
+# HashiCorp tool binaries
+vault
+consul
+nomad
+boundary
+waypoint
+packer
+
+# Kubernetes and orchestration binaries
+kubectl
+helm
+k9s
+kubectx
+kubens
+stern
+skaffold
+kustomize
+argocd
+flux
+
+# Git and CI/CD binaries
+git
+gh
+hub
+forgejo
+gitea
+woodpecker
+drone
+
+# Security and compliance binaries
+vault-cli
+age
+sops
+gpg
+openssl
+
+# Cloud provider CLIs
+aws
+az
+gcloud
+doctl
+
+# Package managers and build tools
+npm
+yarn
+pnpm
+pip
+pipenv
+poetry
+go
+cargo
+rustc
+mvn
+gradle
+
+# Network and service mesh binaries
+traefik
+envoy
+istioctl
+linkerd
+consul-connect# Ignoring cache files and DB init conflicts
+__pycache__/
+jenkins-db-init/
+
+# BSW-ARCH Secure Environment
+.bsw-secure/
+bsw-environment
+*.env

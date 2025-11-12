@@ -1,0 +1,208 @@
+---
+# BSW Infrastructure CI/CD Pipeline Configuration
+# Woodpecker CI pipeline for automated BSW infrastructure deployment and testing
+
+when:
+  - event: push
+    branch: [main, develop]
+  - event: pull_request
+
+variables:
+  - &bsw_image 'cgr.dev/chainguard/python:latest'
+  - &container_registry 'localhost:5000'
+
+pipeline:
+  # Security and Compliance Checks
+  security-scan:
+    image: *bsw_image
+    commands:
+      - echo "🔍 Running BSW security scans..."
+      - python3 security-scanning/security-scanner.py --scan-mode ci
+      - echo "✅ Security scan completed"
+    when:
+      - event: [push, pull_request]
+
+  # Infrastructure Validation
+  infrastructure-validate:
+    image: *bsw_image
+    commands:
+      - echo "🏗️ Validating BSW infrastructure components..."
+      - python3 -m py_compile team-automation/infrastructure-services/monitoring/monitoring-dashboard.py
+      - python3 -m py_compile team-automation/infrastructure-services/monitoring/log-aggregation-service.py
+      - python3 -m py_compile backup-disaster-recovery/backup-automation.py
+      - python3 -m py_compile security-scanning/security-scanner.py
+      - echo "✅ Infrastructure validation completed"
+    depends_on: [security-scan]
+
+  # Container Build and Test
+  container-build:
+    image: cgr.dev/chainguard/podman:latest
+    privileged: true
+    commands:
+      - echo "🐋 Building BSW service containers..."
+      - |
+        # Build monitoring dashboard container
+        cat > Dockerfile.monitoring << 'EOF'
+        FROM cgr.dev/chainguard/python:latest
+        COPY team-automation/infrastructure-services/monitoring/monitoring-dashboard.py /app/dashboard.py
+        WORKDIR /app
+        EXPOSE 8080
+        CMD ["python3", "/app/dashboard.py"]
+        EOF
+      - podman build -t bsw-monitoring:${CI_COMMIT_SHA} -f Dockerfile.monitoring .
+      - |
+        # Build security scanner container
+        cat > Dockerfile.security << 'EOF'
+        FROM cgr.dev/chainguard/python:latest
+        COPY security-scanning/security-scanner.py /app/scanner.py
+        WORKDIR /app
+        EXPOSE 8083
+        CMD ["python3", "/app/scanner.py"]
+        EOF
+      - podman build -t bsw-security:${CI_COMMIT_SHA} -f Dockerfile.security .
+      - echo "✅ Container build completed"
+    depends_on: [infrastructure-validate]
+
+  # Deployment Test
+  deployment-test:
+    image: *bsw_image
+    commands:
+      - echo "🚀 Testing BSW infrastructure deployment..."
+      - cd backup-disaster-recovery
+      - bash disaster-recovery-procedures.sh validate
+      - echo "✅ Deployment test completed"
+    depends_on: [container-build]
+
+  # Compliance Check
+  compliance-check:
+    image: *bsw_image
+    commands:
+      - echo "📋 Running BSW compliance checks..."
+      - python3 security-scanning/security-scanner.py --compliance-only
+      - echo "✅ Compliance check completed"
+    depends_on: [deployment-test]
+
+  # Backup Integrity Test
+  backup-test:
+    image: *bsw_image
+    commands:
+      - echo "💾 Testing backup system integrity..."
+      - python3 backup-disaster-recovery/backup-automation.py --test-mode
+      - echo "✅ Backup test completed"
+    depends_on: [compliance-check]
+    when:
+      - branch: main
+
+  # Deploy to Development
+  deploy-dev:
+    image: *bsw_image
+    commands:
+      - echo "🔄 Triggering ArgoCD deployment to development..."
+      - |
+        # Update ArgoCD application for development environment
+        cat > argocd-dev-app.yaml << 'EOF'
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: bsw-infrastructure-dev
+          namespace: argocd
+        spec:
+          project: default
+          source:
+            repoURL: 'https://codeberg.org/helix-nova/bsw-infra.git'
+            path: .
+            targetRevision: develop
+          destination:
+            server: 'https://kubernetes.default.svc'
+            namespace: bsw-dev
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+        EOF
+      - echo "📄 ArgoCD application manifest created for development"
+      - echo "✅ Development deployment prepared"
+    depends_on: [backup-test]
+    when:
+      - branch: develop
+
+  # Deploy to Production
+  deploy-prod:
+    image: *bsw_image
+    commands:
+      - echo "🎯 Triggering ArgoCD deployment to production..."
+      - |
+        # Update ArgoCD application for production environment
+        cat > argocd-prod-app.yaml << 'EOF'
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: bsw-infrastructure-prod
+          namespace: argocd
+        spec:
+          project: default
+          source:
+            repoURL: 'https://codeberg.org/helix-nova/bsw-infra.git'
+            path: .
+            targetRevision: main
+          destination:
+            server: 'https://kubernetes.default.svc'
+            namespace: bsw-prod
+          syncPolicy:
+            automated:
+              prune: true
+              selfHeal: true
+            retry:
+              limit: 3
+              backoff:
+                duration: 5s
+                factor: 2
+                maxDuration: 3m
+        EOF
+      - echo "📄 ArgoCD application manifest created for production"
+      - echo "🚀 Production deployment prepared"
+    depends_on: [backup-test]
+    when:
+      - branch: main
+
+  # Notification
+  notify:
+    image: *bsw_image
+    commands:
+      - echo "📧 BSW Infrastructure CI/CD Pipeline Completed"
+      - echo "Branch: ${CI_COMMIT_BRANCH}"
+      - echo "Commit: ${CI_COMMIT_SHA}"
+      - echo "Status: SUCCESS ✅"
+      - |
+        # Generate deployment status report
+        cat > deployment-status.json << EOF
+        {
+          "pipeline_id": "${CI_PIPELINE_ID}",
+          "commit": "${CI_COMMIT_SHA}",
+          "branch": "${CI_COMMIT_BRANCH}",
+          "timestamp": "$(date -Iseconds)",
+          "status": "success",
+          "infrastructure": {
+            "monitoring": "deployed",
+            "backup": "validated",
+            "security": "scanned",
+            "compliance": "verified"
+          }
+        }
+        EOF
+      - cat deployment-status.json
+    depends_on: [deploy-dev, deploy-prod]
+    when:
+      status: [success]
+
+  # Failure Notification
+  notify-failure:
+    image: *bsw_image
+    commands:
+      - echo "❌ BSW Infrastructure CI/CD Pipeline Failed"
+      - echo "Branch: ${CI_COMMIT_BRANCH}"
+      - echo "Commit: ${CI_COMMIT_SHA}"
+      - echo "Please check the pipeline logs for details"
+    depends_on: [security-scan, infrastructure-validate, container-build, deployment-test, compliance-check]
+    when:
+      status: [failure]

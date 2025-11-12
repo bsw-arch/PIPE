@@ -1,0 +1,294 @@
+---
+# Zot Registry Deployment and Management Playbook
+# Digital sovereignty through local container registry
+
+- name: Deploy and Configure Zot Container Registry
+  hosts: localhost
+  gather_facts: no
+  become: yes
+  vars:
+    zot_version: "latest"
+    zot_port: 5000
+    zot_data_dir: "/var/lib/zot-registry"
+    zot_config_dir: "/etc/zot"
+    registry_url: "localhost:5000"
+    
+    # Chainguard images to sync for hybrid architects
+    chainguard_images:
+      - "wolfi-base:latest"
+      - "python:latest"
+      - "go:latest"
+      - "postgres:latest"
+      - "redis:latest"
+      - "nginx:latest"
+      - "git:latest"
+      - "kubectl:latest"
+      - "terraform:latest"
+      - "cosign:latest"
+      - "grype:latest"
+      - "prometheus:latest"
+
+  tasks:
+    - name: Ensure Zot data directory exists
+      file:
+        path: "{{ zot_data_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Ensure Zot config directory exists
+      file:
+        path: "{{ zot_config_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create Zot registry configuration
+      copy:
+        content: |
+          {
+            "distSpecVersion": "1.1.0-dev",
+            "storage": {
+              "rootDirectory": "{{ zot_data_dir }}",
+              "gc": {
+                "delay": "1h",
+                "interval": "24h"
+              }
+            },
+            "http": {
+              "address": "0.0.0.0",
+              "port": "{{ zot_port }}"
+            },
+            "log": {
+              "level": "info"
+            },
+            "extensions": {
+              "sync": {
+                "enable": true,
+                "registries": [
+                  {
+                    "urls": ["https://cgr.dev"],
+                    "onDemand": true,
+                    "tlsVerify": true,
+                    "content": [
+                      {
+                        "prefix": "chainguard/**"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "ui": {
+                "enable": true
+              },
+              "metrics": {
+                "enable": true,
+                "prometheus": {
+                  "path": "/metrics"
+                }
+              },
+              "search": {
+                "enable": true,
+                "cve": {
+                  "updateInterval": "2h"
+                }
+              }
+            }
+          }
+        dest: "{{ zot_config_dir }}/config.json"
+        mode: '0644'
+
+    - name: Create Zot systemd service
+      copy:
+        content: |
+          [Unit]
+          Description=Zot Container Registry
+          Documentation=https://zotregistry.io/
+          After=network.target
+          Wants=network.target
+
+          [Service]
+          Type=simple
+          User=root
+          Group=root
+          ExecStartPre=-/usr/bin/podman stop zot-registry
+          ExecStartPre=-/usr/bin/podman rm zot-registry
+          ExecStart=/usr/bin/podman run --name zot-registry \
+            -p {{ zot_port }}:{{ zot_port }} \
+            -v {{ zot_data_dir }}:{{ zot_data_dir }} \
+            -v {{ zot_config_dir }}:{{ zot_config_dir }} \
+            --rm \
+            localhost:5000/chainguard/wolfi-base:latest \
+            sh -c "apk add --no-cache curl wget ca-certificates && \
+                   wget -O /usr/local/bin/zot https://github.com/project-zot/zot/releases/latest/download/zot-linux-amd64 && \
+                   chmod +x /usr/local/bin/zot && \
+                   /usr/local/bin/zot serve {{ zot_config_dir }}/config.json"
+          ExecStop=/usr/bin/podman stop zot-registry
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/zot-registry.service
+        mode: '0644'
+      notify: reload systemd
+
+    - name: Create Zot image sync script
+      copy:
+        content: |
+          #!/bin/bash
+          # Zot Registry Chainguard Image Sync Script
+          # Maintains local copies of security-hardened images
+
+          set -e
+
+          REGISTRY_URL="{{ registry_url }}"
+          SOURCE_REGISTRY="cgr.dev/chainguard"
+          
+          echo "🔄 Starting Chainguard image sync to Zot registry..."
+          echo "📦 Source: $SOURCE_REGISTRY"
+          echo "🎯 Destination: $REGISTRY_URL"
+
+          # Images to sync for hybrid architects
+          IMAGES=(
+          {% for image in chainguard_images %}
+            "{{ image }}"
+          {% endfor %}
+          )
+
+          sync_image() {
+            local image="$1"
+            echo "🔄 Syncing: $image"
+            
+            if skopeo copy \
+                docker://$SOURCE_REGISTRY/$image \
+                docker://$REGISTRY_URL/chainguard/$image \
+                --dest-tls-verify=false; then
+              echo "✅ Successfully synced: $image"
+            else
+              echo "❌ Failed to sync: $image"
+            fi
+          }
+
+          # Check if Zot registry is running
+          if ! curl -sf http://{{ registry_url }}/v2/ > /dev/null; then
+            echo "❌ Zot registry not accessible at http://{{ registry_url }}"
+            exit 1
+          fi
+
+          echo "✅ Zot registry is accessible"
+
+          # Sync all images
+          for image in "${IMAGES[@]}"; do
+            sync_image "$image" &
+            
+            # Limit concurrent syncs
+            (($(jobs -r | wc -l) >= 5)) && wait
+          done
+
+          # Wait for all background jobs to complete
+          wait
+
+          echo "✅ Chainguard image sync completed"
+          echo "📊 Registry catalog: curl -s http://{{ registry_url }}/v2/_catalog"
+        dest: /usr/local/bin/zot-sync-chainguard
+        mode: '0755'
+
+    - name: Create Zot registry management script
+      copy:
+        content: |
+          #!/bin/bash
+          # Zot Registry Management Script
+
+          REGISTRY_URL="{{ registry_url }}"
+
+          case "$1" in
+            status)
+              echo "📊 Zot Registry Status"
+              if curl -sf http://$REGISTRY_URL/v2/ > /dev/null; then
+                echo "✅ Registry: Online"
+                CATALOG=$(curl -s http://$REGISTRY_URL/v2/_catalog | jq -r '.repositories | length // 0')
+                echo "📦 Repositories: $CATALOG"
+                echo "🌐 Web UI: http://$REGISTRY_URL/_zot/ui"
+              else
+                echo "❌ Registry: Offline"
+              fi
+              ;;
+            
+            catalog)
+              echo "📦 Registry Catalog:"
+              curl -s http://$REGISTRY_URL/v2/_catalog | jq -r '.repositories[]?' || echo "No repositories found"
+              ;;
+            
+            sync)
+              echo "🔄 Starting Chainguard image sync..."
+              /usr/local/bin/zot-sync-chainguard
+              ;;
+            
+            ui)
+              echo "🌐 Opening Zot registry web interface..."
+              echo "URL: http://$REGISTRY_URL/_zot/ui"
+              ;;
+              
+            *)
+              echo "Zot Registry Management"
+              echo "Usage: $0 {status|catalog|sync|ui}"
+              echo ""
+              echo "Commands:"
+              echo "  status   - Check registry status and statistics"
+              echo "  catalog  - List all repositories in registry"
+              echo "  sync     - Sync Chainguard images to local registry"
+              echo "  ui       - Display web interface URL"
+              ;;
+          esac
+        dest: /usr/local/bin/zot-manage
+        mode: '0755'
+
+    - name: Enable and start Zot registry service
+      systemd:
+        name: zot-registry
+        enabled: yes
+        state: started
+      ignore_errors: yes
+
+    - name: Create cron job for daily image sync
+      cron:
+        name: "Zot Chainguard image sync"
+        minute: "0"
+        hour: "2"
+        job: "/usr/local/bin/zot-sync-chainguard > /var/log/zot-sync.log 2>&1"
+
+    - name: Display deployment summary
+      debug:
+        msg: |
+          🎯 ZOT REGISTRY DEPLOYMENT COMPLETE
+          ================================================
+          
+          📦 Registry URL: http://{{ registry_url }}
+          🌐 Web Interface: http://{{ registry_url }}/_zot/ui
+          📊 API Endpoint: http://{{ registry_url }}/v2/
+          
+          🔧 Management Commands:
+          • zot-manage status    - Check registry health
+          • zot-manage catalog   - List repositories  
+          • zot-manage sync      - Sync Chainguard images
+          • zot-manage ui        - Show web interface URL
+          
+          📦 Features Enabled:
+          ✅ On-demand sync from Chainguard (cgr.dev)
+          ✅ Container vulnerability scanning
+          ✅ Web-based registry management
+          ✅ Prometheus metrics endpoint
+          ✅ Daily automated image sync (2 AM)
+          
+          🎭 Hybrid Architects Ready:
+          • localhost:5000/chainguard/* images available
+          • Digital sovereignty through local registry
+          • Security-hardened container foundation
+
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
