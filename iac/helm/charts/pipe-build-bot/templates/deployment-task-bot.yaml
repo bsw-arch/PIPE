@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pipe-build-bot.fullname" . }}-task-bot
+  labels:
+    {{- include "pipe-build-bot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: task-bot
+spec:
+  replicas: {{ .Values.replicaCount.taskBot }}
+  selector:
+    matchLabels:
+      {{- include "pipe-build-bot.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: task-bot
+  template:
+    metadata:
+      annotations:
+        {{- if .Values.openbao.enabled }}
+        {{- toYaml .Values.openbao.annotations | nindent 8 }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "pipe-build-bot.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: task-bot
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "pipe-build-bot.serviceAccountName" . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: task-bot
+        image: "{{ .Values.global.registry }}/{{ .Values.images.taskBot.repository }}:{{ .Values.images.taskBot.tag | default .Values.global.tag }}"
+        imagePullPolicy: {{ .Values.global.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.ports.taskBot }}
+          protocol: TCP
+        env:
+        - name: TASK_BOT_HOME
+          value: "/app"
+        - name: TASK_BOT_CONFIG
+          value: "/app/config"
+        - name: TASK_BOT_LOG_LEVEL
+          value: {{ .Values.config.logLevel | quote }}
+        - name: KERAGR_URL
+          {{- if .Values.openbao.enabled }}
+          valueFrom:
+            secretKeyRef:
+              name: pipe-build-bot-secrets
+              key: keragr_url
+          {{- else }}
+          value: {{ .Values.config.keragrUrl | quote }}
+          {{- end }}
+        - name: COORDINATION_URL
+          {{- if .Values.openbao.enabled }}
+          valueFrom:
+            secretKeyRef:
+              name: pipe-build-bot-secrets
+              key: coordination_url
+          {{- else }}
+          value: {{ .Values.config.coordinationUrl | quote }}
+          {{- end }}
+        - name: AUTONOMOUS
+          value: {{ .Values.config.autonomous | quote }}
+        - name: LEARNING_ENABLED
+          value: {{ .Values.config.learningEnabled | quote }}
+        - name: TOGAF_COMPLIANCE
+          value: {{ .Values.config.togafCompliance | quote }}
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.resources.taskBot | nindent 10 }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: {{ .Values.persistence.mountPath }}
+        - name: tmp
+          mountPath: /tmp
+        {{- if .Values.openbao.enabled }}
+        - name: vault-token
+          mountPath: /vault/secrets
+          readOnly: true
+        {{- end }}
+      volumes:
+      - name: data
+        {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "pipe-build-bot.fullname" . }}-data
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: tmp
+        emptyDir: {}
+      {{- if .Values.openbao.enabled }}
+      - name: vault-token
+        emptyDir:
+          medium: Memory
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
