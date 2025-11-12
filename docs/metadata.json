@@ -1,0 +1,220 @@
+{
+  "repository": {
+    "name": "bsw-arch",
+    "description": "BSW-Tech Bot Factory Architecture Documentation",
+    "version": "1.0.0",
+    "updated": "2025-11-10",
+    "owner": "bsw-arch",
+    "license": "MIT",
+    "language": "en-GB",
+    "format": "markdown"
+  },
+  "statistics": {
+    "total_documents": 23,
+    "total_size_bytes": 1048576,
+    "total_directories": 30,
+    "bots_supported": 185,
+    "domains": 4,
+    "documentation_pages": 400
+  },
+  "domains": [
+    {
+      "id": "AXIS",
+      "name": "Architecture Domain",
+      "bots_count": 45,
+      "purpose": "Enterprise architecture, design patterns, compliance",
+      "key_bots": [
+        "axis-docs-bot",
+        "axis-coordination-bot",
+        "axis-validation-bot",
+        "axis-blueprint-bot"
+      ]
+    },
+    {
+      "id": "PIPE",
+      "name": "Pipeline Domain",
+      "bots_count": 48,
+      "purpose": "CI/CD, build automation, deployment",
+      "key_bots": [
+        "pipe-build-bot",
+        "pipe-test-bot",
+        "pipe-release-bot",
+        "pipe-deployment-bot"
+      ]
+    },
+    {
+      "id": "ECO",
+      "name": "Ecological Domain",
+      "bots_count": 48,
+      "purpose": "Sustainability, resource optimization, monitoring",
+      "key_bots": [
+        "eco-monitoring-bot",
+        "eco-optimization-bot",
+        "eco-metrics-bot",
+        "eco-report-bot"
+      ]
+    },
+    {
+      "id": "IV",
+      "name": "Intelligence/Validation Domain",
+      "bots_count": 44,
+      "purpose": "AI/ML, validation, quality assurance",
+      "key_bots": [
+        "iv-analysis-bot",
+        "iv-validation-bot",
+        "iv-intelligence-bot",
+        "iv-report-bot"
+      ]
+    }
+  ],
+  "documentation_structure": {
+    "architecture": {
+      "path": "docs/architecture",
+      "description": "System architecture and domain documentation",
+      "key_files": [
+        "COMPREHENSIVE-BOT-FACTORY-ARCHITECTURE-ANALYSIS.md",
+        "components/BOTS-KNOWLEDGE-BASE-ARCHITECTURE.md",
+        "infrastructure/IAC-ALIGNMENT-REPORT.md"
+      ],
+      "file_count": 3,
+      "priority": "critical"
+    },
+    "processes": {
+      "path": "docs/processes",
+      "description": "Workflow and deployment procedures",
+      "key_files": [
+        "github_docs_consolidation_strategy.md"
+      ],
+      "file_count": 1,
+      "priority": "high"
+    },
+    "guides": {
+      "path": "docs/guides",
+      "description": "Development and security guides",
+      "key_files": [
+        "development/CLAUDE.md",
+        "development/BSW-TECH-AI-INTEGRATION-GUIDE.md",
+        "bot-domains/PIPE-BOTS-INSTRUCTIONS.md"
+      ],
+      "file_count": 3,
+      "priority": "high"
+    },
+    "specifications": {
+      "path": "docs/specifications",
+      "description": "Bot and container specifications",
+      "key_files": [],
+      "file_count": 0,
+      "priority": "medium"
+    },
+    "reference": {
+      "path": "docs/reference",
+      "description": "APIs, standards, glossary",
+      "key_files": [
+        "APKO-DOMAIN-CONTAINERS-STRATEGY.md",
+        "AUGMENTIC-AI-INTEGRATION-PLAN.md",
+        "AXIS-BOTS-API-KEYS.md",
+        "BSW-GOV-NAMESPACE-ARCHITECTURE-DEPLOYMENT.md",
+        "BSW-Pipeline-Analysis-2025-09-01.md",
+        "KNOWLEDGE-BASE-OPTIONS-COMPARISON.md",
+        "KNOWLEDGE-BASE-QUICK-START.md",
+        "KNOWLEDGE-BASE-README.md"
+      ],
+      "file_count": 13,
+      "priority": "medium"
+    },
+    "diagrams": {
+      "path": "docs/diagrams",
+      "description": "Architecture diagrams (Mermaid)",
+      "key_files": [],
+      "file_count": 0,
+      "priority": "low"
+    },
+    "templates": {
+      "path": "docs/templates",
+      "description": "Reusable templates",
+      "key_files": [],
+      "file_count": 0,
+      "priority": "low"
+    }
+  },
+  "bot_access_patterns": [
+    {
+      "method": "git_clone",
+      "priority": "recommended",
+      "command": "git clone https://github.com/bsw-arch/bsw-arch.git /opt/documentation",
+      "use_case": "Full repository access with version control",
+      "cache_strategy": "Clone once, git pull for updates"
+    },
+    {
+      "method": "github_api",
+      "priority": "alternative",
+      "endpoint": "https://api.github.com/repos/bsw-arch/bsw-arch/contents",
+      "use_case": "Programmatic file-by-file access",
+      "cache_strategy": "Use ETag headers for caching"
+    },
+    {
+      "method": "meta_keragr",
+      "priority": "future",
+      "status": "planned",
+      "timeline": "10 weeks",
+      "use_case": "Hybrid knowledge base with RAG capabilities"
+    }
+  ],
+  "technology_stack": {
+    "containers": {
+      "builder": "apko",
+      "base": "Chainguard Wolfi",
+      "size": "15-50MB"
+    },
+    "infrastructure": {
+      "iac": "OpenTofu",
+      "secrets": "OpenBao",
+      "os": "Qubes OS"
+    },
+    "ai_framework": {
+      "name": "CrewAI",
+      "purpose": "Multi-agent collaboration"
+    },
+    "git_hosting": {
+      "primary": "Codeberg",
+      "documentation": "GitHub",
+      "reason": "FAGAM-free alternatives"
+    }
+  },
+  "security_compliance": {
+    "fagam_prohibition": true,
+    "standards": [
+      "TOGAF 9.2",
+      "Zachman Framework",
+      "ArchiMate 3.1",
+      "ISO 27001"
+    ],
+    "language": "UK English"
+  },
+  "api_endpoints": {
+    "repository_metadata": "https://api.github.com/repos/bsw-arch/bsw-arch",
+    "documentation_tree": "https://api.github.com/repos/bsw-arch/bsw-arch/git/trees/main?recursive=1",
+    "metadata_json": "https://raw.githubusercontent.com/bsw-arch/bsw-arch/main/docs/metadata.json",
+    "document_index": "https://raw.githubusercontent.com/bsw-arch/bsw-arch/main/docs/INDEX.md"
+  },
+  "update_frequency": {
+    "documentation": "weekly",
+    "metadata": "on_commit",
+    "strategy": "Automated sync from bsw-gov"
+  },
+  "keywords": [
+    "bot-factory",
+    "architecture",
+    "documentation",
+    "bsw-tech",
+    "codeberg",
+    "apko",
+    "wolfi",
+    "crewai",
+    "multi-agent",
+    "togaf",
+    "opentofu",
+    "qubes-os",
+    "fagam-free"
+  ]
+}

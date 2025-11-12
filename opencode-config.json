@@ -1,0 +1,27 @@
+{
+  "$schema": "https://opencode.ai/schema.json",
+  "provider": "ollama",
+  "model": "deepseek-coder:6.7b",
+  "api_base": "http://localhost:11434",
+  "temperature": 0.2,
+  "mcp": {
+    "servers": {
+      "bsw-bot-factory": {
+        "command": "python3",
+        "args": ["/home/user/bsw-arch/knowledge-graph/mcp-server/mcp_server.py"],
+        "env": {
+          "NEO4J_URI": "bolt://localhost:7687",
+          "NEO4J_USER": "neo4j",
+          "NEO4J_PASSWORD": "bsw-secure-password-2024",
+          "CHROMA_PATH": "/home/user/bsw-arch/knowledge-graph/data/chroma_db"
+        }
+      }
+    }
+  },
+  "theme": "default",
+  "autoApprove": false,
+  "shell": "/bin/bash",
+  "autoCompact": true,
+  "contextWindow": 32000,
+  "maxTokens": 4096
+}

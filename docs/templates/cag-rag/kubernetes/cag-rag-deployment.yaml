@@ -1,0 +1,358 @@
+# BSW-Arch CAG+RAG System - Kubernetes Deployment
+# Complete deployment for production environment
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cag-rag
+  labels:
+    name: cag-rag
+    bsw.domain: "system"
+    bsw.component: "cag-rag"
+  annotations:
+    description: "CAG+RAG system for BSW-Arch bot factory"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cag-rag-config
+  namespace: cag-rag
+data:
+  # CAG Layer Configuration
+  CAG_CONTEXT_TTL: "3600"
+  CAG_MAX_HISTORY: "10"
+  LOG_LEVEL: "INFO"
+
+  # RAG Layer Configuration
+  RAG_EMBEDDING_MODEL: "all-MiniLM-L6-v2"
+  RAG_EMBEDDING_DIM: "384"
+  RAG_TOP_K: "10"
+
+  # Fusion Weights
+  FUSION_WEIGHT_VECTOR: "0.4"
+  FUSION_WEIGHT_GRAPH: "0.35"
+  FUSION_WEIGHT_DOCUMENT: "0.25"
+
+  # Domain Endpoints
+  AXIS_ENDPOINT: "http://axis-orchestrator.axis-bots.svc.cluster.local:8000"
+  PIPE_ENDPOINT: "http://pipe-orchestrator.pipe-bots.svc.cluster.local:8000"
+  ECO_ENDPOINT: "http://eco-orchestrator.eco-bots.svc.cluster.local:8000"
+  IV_ENDPOINT: "http://iv-orchestrator.iv-bots.svc.cluster.local:8000"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cag-rag-secrets
+  namespace: cag-rag
+type: Opaque
+stringData:
+  REDIS_PASSWORD: "CHANGE_ME"
+  POSTGRES_PASSWORD: "CHANGE_ME"
+  NEO4J_PASSWORD: "CHANGE_ME"
+  MONGODB_PASSWORD: "CHANGE_ME"
+  # Domain auth tokens
+  AXIS_TOKEN: "CHANGE_ME"
+  PIPE_TOKEN: "CHANGE_ME"
+  ECO_TOKEN: "CHANGE_ME"
+  IV_TOKEN: "CHANGE_ME"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cag-rag-mcp-server
+  namespace: cag-rag
+  labels:
+    app: cag-rag-mcp
+    component: mcp-server
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cag-rag-mcp
+  template:
+    metadata:
+      labels:
+        app: cag-rag-mcp
+        component: mcp-server
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: cag-rag-service-account
+
+      containers:
+      - name: mcp-server
+        image: cag-rag-mcp-server:latest
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: cag-rag-config
+              key: LOG_LEVEL
+
+        # Redis connection
+        - name: REDIS_URL
+          value: "redis://redis-service:6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cag-rag-secrets
+              key: REDIS_PASSWORD
+
+        # PostgreSQL connection
+        - name: POSTGRES_URL
+          value: "postgresql://cag:$(POSTGRES_PASSWORD)@postgres-service:5432/cag_db"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cag-rag-secrets
+              key: POSTGRES_PASSWORD
+
+        # Neo4j connection
+        - name: NEO4J_URI
+          value: "bolt://neo4j-service:7687"
+        - name: NEO4J_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cag-rag-secrets
+              key: NEO4J_PASSWORD
+
+        # MongoDB connection
+        - name: MONGODB_URI
+          value: "mongodb://mongodb-service:27017"
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 1
+            memory: 2Gi
+
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65532
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cag-rag-mcp
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cag-rag-service
+  namespace: cag-rag
+  labels:
+    app: cag-rag-mcp
+spec:
+  selector:
+    app: cag-rag-mcp
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cag-rag-mcp-hpa
+  namespace: cag-rag
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cag-rag-mcp-server
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cag-rag-mcp-pdb
+  namespace: cag-rag
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cag-rag-mcp
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cag-rag-service-account
+  namespace: cag-rag
+  labels:
+    app: cag-rag
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cag-rag-role
+  namespace: cag-rag
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cag-rag-rolebinding
+  namespace: cag-rag
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cag-rag-role
+subjects:
+- kind: ServiceAccount
+  name: cag-rag-service-account
+  namespace: cag-rag
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cag-rag-network-policy
+  namespace: cag-rag
+spec:
+  podSelector:
+    matchLabels:
+      app: cag-rag-mcp
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from bot domains
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: axis-bots
+    - namespaceSelector:
+        matchLabels:
+          name: pipe-bots
+    - namespaceSelector:
+        matchLabels:
+          name: eco-bots
+    - namespaceSelector:
+        matchLabels:
+          name: iv-bots
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow from monitoring
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow database access
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: neo4j
+    ports:
+    - protocol: TCP
+      port: 7687
+  - to:
+    - podSelector:
+        matchLabels:
+          app: mongodb
+    ports:
+    - protocol: TCP
+      port: 27017
+  # Allow HTTPS to external services
+  - ports:
+    - protocol: TCP
+      port: 443

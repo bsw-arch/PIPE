@@ -1,0 +1,48 @@
+docs/
+├── INDEX.md                                     [This file]
+├── TREE.txt                                     [Directory structure]
+│
+├── architecture/                                [Architecture Documentation]
+│   ├── COMPREHENSIVE-BOT-FACTORY-ARCHITECTURE-ANALYSIS.md
+│   ├── domains/                                 [Domain-specific docs]
+│   │   ├── AXIS/                               [Architecture domain]
+│   │   ├── PIPE/                               [Pipeline domain]
+│   │   ├── ECO/                                [Ecological domain]
+│   │   └── IV/                                 [Intelligence/Validation domain]
+│   ├── components/                             [Component documentation]
+│   │   └── BOTS-KNOWLEDGE-BASE-ARCHITECTURE.md
+│   └── infrastructure/                         [Infrastructure docs]
+│       └── IAC-ALIGNMENT-REPORT.md
+│
+├── processes/                                   [Process Documentation]
+│   ├── github_docs_consolidation_strategy.md
+│   ├── workflows/                              [Workflow definitions]
+│   ├── deployment/                             [Deployment procedures]
+│   └── operations/                             [Operational procedures]
+│
+├── guides/                                      [Development Guides]
+│   ├── development/                            [Development guides]
+│   │   ├── CLAUDE.md                          [BSW-Tech Claude guide]
+│   │   └── BSW-TECH-AI-INTEGRATION-GUIDE.md
+│   ├── security/                               [Security guides]
+│   └── best-practices/                         [Best practices]
+│
+├── specifications/                              [Specifications]
+│   ├── bots/                                   [Bot specifications]
+│   ├── containers/                             [Container specs]
+│   └── integration/                            [Integration patterns]
+│
+├── diagrams/                                    [Architecture Diagrams]
+│   ├── architecture/                           [System diagrams]
+│   ├── workflows/                              [Workflow diagrams]
+│   └── infrastructure/                         [Infrastructure diagrams]
+│
+├── templates/                                   [Templates]
+│   ├── bot/                                    [Bot templates]
+│   ├── container/                              [Container templates]
+│   └── deployment/                             [Deployment templates]
+│
+└── reference/                                   [Reference Documentation]
+    ├── apis/                                   [API documentation]
+    ├── standards/                              [Standards (TOGAF, etc)]
+    └── glossary/                               [Terminology]

@@ -1,0 +1,64 @@
+# ECO Bot Base Container Specification (apko)
+# Chainguard Wolfi-based minimal container for ECO domain bots
+# Target size: <50MB
+
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    # Base system
+    - wolfi-base
+    - ca-certificates
+    - tzdata
+
+    # Runtime
+    - python-3.11
+    - py3-pip
+
+    # Essential tools
+    - git
+    - bash
+
+    # Monitoring dependencies
+    - py3-prometheus-client
+    - py3-requests
+    - py3-yaml
+
+# Non-root user for security
+accounts:
+  groups:
+    - groupname: ecobot
+      gid: 65532
+  users:
+    - username: ecobot
+      uid: 65532
+      gid: 65532
+      home: /home/ecobot
+  run-as: 65532
+
+# Environment
+environment:
+  PYTHONPATH: /opt/documentation/bot-utils:/app
+  DOCS_PATH: /opt/documentation/docs
+  PYTHONUNBUFFERED: "1"
+  TZ: UTC
+
+# Working directory
+work-dir: /app
+
+# Container metadata
+annotations:
+  org.opencontainers.image.title: "ECO Bot Base Image"
+  org.opencontainers.image.description: "Base container for BSW-Arch ECO domain bots"
+  org.opencontainers.image.version: "1.0.0"
+  org.opencontainers.image.vendor: "BSW-Tech"
+  org.opencontainers.image.licenses: "MIT"
+  org.opencontainers.image.source: "https://github.com/bsw-arch/bsw-arch"
+
+  # BSW-specific metadata
+  bsw.domain: "ECO"
+  bsw.bot-factory: "true"
+  bsw.fagam-compliant: "true"
+  bsw.target-size: "<50MB"

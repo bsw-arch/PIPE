@@ -1,0 +1,17 @@
+# ECO Bot Python Dependencies
+# Keep minimal to maintain <50MB container size
+
+# Core dependencies
+pyyaml>=6.0.1
+requests>=2.31.0
+
+# Monitoring
+prometheus-client>=0.18.0
+psutil>=5.9.6
+
+# Kubernetes client (for eco-infra-bot)
+kubernetes>=28.1.0
+
+# Optional: for advanced monitoring
+# opentelemetry-api>=1.21.0
+# opentelemetry-sdk>=1.21.0

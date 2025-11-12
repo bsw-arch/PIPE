@@ -1,0 +1,464 @@
+---
+# BSW-Arch Documentation Catalogue
+# Machine-readable index for bot scanning and programmatic access
+
+version: "1.0.0"
+updated: "2025-11-10"
+format: "YAML 1.2"
+
+repository:
+  name: "bsw-arch"
+  url: "https://github.com/bsw-arch/bsw-arch"
+  type: "documentation"
+  language: "en-GB"
+
+documents:
+  # CRITICAL PRIORITY - Core Architecture
+  - id: "arch-001"
+    title: "Comprehensive Bot Factory Architecture Analysis"
+    path: "docs/architecture/COMPREHENSIVE-BOT-FACTORY-ARCHITECTURE-ANALYSIS.md"
+    category: "architecture"
+    priority: "critical"
+    size_lines: 2320
+    size_pages: 145
+    topics:
+      - "bot-factory"
+      - "system-architecture"
+      - "multi-domain"
+      - "185-bots"
+    domains:
+      - "AXIS"
+      - "PIPE"
+      - "ECO"
+      - "IV"
+    mermaid_diagrams: 10
+    use_cases:
+      - "Understanding complete system architecture"
+      - "Bot factory deployment planning"
+      - "Multi-domain coordination"
+    bot_relevance: ["axis-docs-bot", "axis-coordination-bot", "axis-blueprint-bot"]
+
+  - id: "arch-002"
+    title: "Bots Knowledge Base Architecture"
+    path: "docs/architecture/components/BOTS-KNOWLEDGE-BASE-ARCHITECTURE.md"
+    category: "architecture"
+    priority: "critical"
+    size_lines: 3439
+    size_kb: 103
+    topics:
+      - "knowledge-base"
+      - "META-KERAGR"
+      - "RAG"
+      - "Cognee"
+    use_cases:
+      - "Implementing bot knowledge base"
+      - "RAG system design"
+      - "Documentation access patterns"
+    bot_relevance: ["iv-intelligence-bot", "axis-docs-bot", "iv-analysis-bot"]
+
+  - id: "arch-003"
+    title: "IAC Alignment Report"
+    path: "docs/architecture/infrastructure/IAC-ALIGNMENT-REPORT.md"
+    category: "infrastructure"
+    priority: "critical"
+    size_lines: 842
+    alignment_percentage: 75
+    topics:
+      - "infrastructure-as-code"
+      - "OpenTofu"
+      - "OpenBao"
+      - "FAGAM-prohibition"
+    issues:
+      - "Terraform references need OpenTofu migration"
+      - "Vault references need OpenBao migration"
+    use_cases:
+      - "IAC stack validation"
+      - "FAGAM compliance checking"
+      - "Infrastructure migration planning"
+    bot_relevance: ["axis-validation-bot", "pipe-deployment-bot", "eco-compliance-bot"]
+
+  # HIGH PRIORITY - Process Documentation
+  - id: "proc-001"
+    title: "GitHub Docs Consolidation Strategy"
+    path: "docs/processes/github_docs_consolidation_strategy.md"
+    category: "processes"
+    priority: "high"
+    size_lines: 558
+    topics:
+      - "documentation-consolidation"
+      - "bot-access-patterns"
+      - "automation"
+    use_cases:
+      - "Understanding documentation structure"
+      - "Implementing bot access patterns"
+      - "Documentation sync automation"
+    bot_relevance: ["axis-docs-bot", "pipe-build-bot", "eco-monitoring-bot"]
+
+  # HIGH PRIORITY - Development Guides
+  - id: "guide-001"
+    title: "BSW-Tech Claude Integration Guide"
+    path: "docs/guides/development/CLAUDE.md"
+    category: "guides"
+    priority: "high"
+    size_lines: 613
+    topics:
+      - "claude-code"
+      - "multi-tab-workflows"
+      - "development-practices"
+    use_cases:
+      - "Multi-tab Claude setup"
+      - "BSW-Tech workflow implementation"
+      - "Development best practices"
+    bot_relevance: ["axis-coordination-bot", "pipe-build-bot", "iv-validation-bot"]
+
+  - id: "guide-002"
+    title: "BSW-Tech AI Integration Guide"
+    path: "docs/guides/development/BSW-TECH-AI-INTEGRATION-GUIDE.md"
+    category: "guides"
+    priority: "high"
+    size_lines: 886
+    size_pages: 50
+    topics:
+      - "ai-integration"
+      - "crewai"
+      - "multi-agent"
+    use_cases:
+      - "AI bot development"
+      - "CrewAI integration"
+      - "Multi-agent orchestration"
+    bot_relevance: ["iv-intelligence-bot", "axis-coordination-bot", "eco-optimization-bot"]
+
+  - id: "guide-003"
+    title: "PIPE Bots Domain Instructions"
+    path: "docs/guides/bot-domains/PIPE-BOTS-INSTRUCTIONS.md"
+    category: "guides"
+    priority: "critical"
+    size_lines: 1140
+    topics:
+      - "pipe-domain"
+      - "ci-cd"
+      - "pipeline-automation"
+      - "container-builds"
+      - "deployment"
+      - "apko"
+      - "wolfi"
+    domains:
+      - "PIPE"
+    use_cases:
+      - "PIPE bot initialization and setup"
+      - "CI/CD pipeline orchestration"
+      - "Container build automation (apko + Wolfi)"
+      - "Multi-bot collaboration patterns"
+      - "Deployment strategies (canary, blue-green, rolling)"
+    bot_relevance: ["pipe-build-bot", "pipe-deploy-bot", "pipe-test-bot", "pipe-container-bot", "pipe-ci-bot", "pipe-cd-bot"]
+
+  # MEDIUM PRIORITY - Reference Documentation
+  - id: "ref-001"
+    title: "APKO Domain Containers Strategy"
+    path: "docs/reference/APKO-DOMAIN-CONTAINERS-STRATEGY.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 883
+    topics:
+      - "apko"
+      - "wolfi"
+      - "containers"
+      - "15-50MB"
+    use_cases:
+      - "Container build strategy"
+      - "Domain-specific container design"
+      - "Supply chain security"
+    bot_relevance: ["pipe-build-bot", "pipe-deployment-bot", "eco-optimization-bot"]
+
+  - id: "ref-002"
+    title: "Augmentic AI Integration Plan"
+    path: "docs/reference/AUGMENTIC-AI-INTEGRATION-PLAN.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 454
+    topics:
+      - "augmentic-ai"
+      - "integration-roadmap"
+      - "ai-agents"
+    use_cases:
+      - "AI integration planning"
+      - "Augmentic platform setup"
+      - "Agent deployment"
+    bot_relevance: ["iv-intelligence-bot", "axis-planning-bot", "axis-coordination-bot"]
+
+  - id: "ref-003"
+    title: "AXIS Bots API Keys"
+    path: "docs/reference/AXIS-BOTS-API-KEYS.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 495
+    topics:
+      - "api-keys"
+      - "authentication"
+      - "security"
+    use_cases:
+      - "Bot authentication setup"
+      - "API key management"
+      - "Security configuration"
+    bot_relevance: ["axis-security-bot", "axis-secrets-bot", "pipe-deployment-bot"]
+
+  - id: "ref-004"
+    title: "BSW-GOV Namespace Architecture Deployment"
+    path: "docs/reference/BSW-GOV-NAMESPACE-ARCHITECTURE-DEPLOYMENT.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 173
+    topics:
+      - "namespaces"
+      - "deployment"
+      - "qubes-os"
+    use_cases:
+      - "Namespace configuration"
+      - "Qubes AppVM deployment"
+      - "Multi-AppVM coordination"
+    bot_relevance: ["pipe-deployment-bot", "axis-infra-bot", "eco-resource-bot"]
+
+  - id: "ref-005"
+    title: "BSW Pipeline Analysis"
+    path: "docs/reference/BSW-Pipeline-Analysis-2025-09-01.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 386
+    topics:
+      - "pipeline-analysis"
+      - "ci-cd"
+      - "automation"
+    use_cases:
+      - "Pipeline optimization"
+      - "CI/CD analysis"
+      - "Build automation"
+    bot_relevance: ["pipe-build-bot", "pipe-test-bot", "pipe-analytics-bot"]
+
+  - id: "ref-006"
+    title: "Knowledge Base Options Comparison"
+    path: "docs/reference/KNOWLEDGE-BASE-OPTIONS-COMPARISON.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 639
+    topics:
+      - "knowledge-base"
+      - "comparison"
+      - "evaluation"
+    use_cases:
+      - "Knowledge base selection"
+      - "Technology evaluation"
+      - "Architecture decision making"
+    bot_relevance: ["axis-docs-bot", "axis-assessment-bot", "iv-analysis-bot"]
+
+  - id: "ref-007"
+    title: "Knowledge Base Quick Start"
+    path: "docs/reference/KNOWLEDGE-BASE-QUICK-START.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 427
+    topics:
+      - "quick-start"
+      - "setup"
+      - "configuration"
+    use_cases:
+      - "Quick knowledge base setup"
+      - "Getting started guide"
+      - "Initial configuration"
+    bot_relevance: ["axis-docs-bot", "pipe-deployment-bot", "iv-training-bot"]
+
+  - id: "ref-008"
+    title: "Knowledge Base README"
+    path: "docs/reference/KNOWLEDGE-BASE-README.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 582
+    topics:
+      - "documentation"
+      - "overview"
+      - "usage"
+    use_cases:
+      - "Knowledge base overview"
+      - "Usage patterns"
+      - "Integration examples"
+    bot_relevance: ["axis-docs-bot", "axis-kb-bot", "iv-intelligence-bot"]
+
+  - id: "ref-009"
+    title: "Claude Multi-AppVM GitOps"
+    path: "docs/reference/CLAUDE-20250901-0011-BSW-MULTI-APPVM-GITOPS.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 3067
+    topics:
+      - "gitops"
+      - "multi-appvm"
+      - "qubes-os"
+    use_cases:
+      - "GitOps implementation"
+      - "Multi-AppVM orchestration"
+      - "Qubes OS automation"
+    bot_relevance: ["pipe-deployment-bot", "axis-coordination-bot", "eco-orchestration-bot"]
+
+  - id: "ref-010"
+    title: "Claude Complete GitOps Stack"
+    path: "docs/reference/CLAUDE-20250901-0125-BSW-COMPLETE-GITOPS-STACK.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 3124
+    topics:
+      - "gitops-stack"
+      - "complete-implementation"
+      - "automation"
+    use_cases:
+      - "Complete GitOps setup"
+      - "Full stack automation"
+      - "End-to-end deployment"
+    bot_relevance: ["pipe-deployment-bot", "axis-infra-bot", "eco-provisioning-bot"]
+
+  - id: "ref-011"
+    title: "Claude BSW-GOV Session"
+    path: "docs/reference/CLAUDE-bsw-gov-20250829-030155.md"
+    category: "reference"
+    priority: "medium"
+    size_lines: 1340
+    topics:
+      - "session-capture"
+      - "bsw-gov"
+      - "architecture-decisions"
+    use_cases:
+      - "Historical context"
+      - "Architecture decisions"
+      - "Session analysis"
+    bot_relevance: ["axis-docs-bot", "axis-timeline-bot", "iv-analysis-bot"]
+
+  # Duplicate entries (in both architecture and reference)
+  - id: "ref-012"
+    title: "Bots Knowledge Base Architecture (Reference Copy)"
+    path: "docs/reference/BOTS-KNOWLEDGE-BASE-ARCHITECTURE.md"
+    category: "reference"
+    priority: "low"
+    size_lines: 3439
+    note: "Duplicate of arch-002, see architecture/components/"
+    bot_relevance: []
+
+  - id: "ref-013"
+    title: "IAC Alignment Report (Reference Copy)"
+    path: "docs/reference/IAC-ALIGNMENT-REPORT.md"
+    category: "reference"
+    priority: "low"
+    size_lines: 842
+    note: "Duplicate of arch-003, see architecture/infrastructure/"
+    bot_relevance: []
+
+# Document Categories
+categories:
+  architecture:
+    description: "System architecture and design documentation"
+    priority: "critical"
+    document_count: 3
+    use_for:
+      - "System design understanding"
+      - "Architecture planning"
+      - "Multi-domain coordination"
+
+  infrastructure:
+    description: "Infrastructure as code and deployment"
+    priority: "critical"
+    document_count: 1
+    use_for:
+      - "IAC validation"
+      - "Deployment automation"
+      - "Infrastructure planning"
+
+  processes:
+    description: "Workflow and process documentation"
+    priority: "high"
+    document_count: 1
+    use_for:
+      - "Workflow implementation"
+      - "Process automation"
+      - "Best practices"
+
+  guides:
+    description: "Development and operational guides"
+    priority: "high"
+    document_count: 2
+    use_for:
+      - "Developer onboarding"
+      - "Integration implementation"
+      - "Best practices"
+
+  reference:
+    description: "Reference documentation and historical records"
+    priority: "medium"
+    document_count: 13
+    use_for:
+      - "Technical reference"
+      - "Historical context"
+      - "Detailed specifications"
+
+# Bot Usage Patterns
+bot_usage_patterns:
+  axis_bots:
+    primary_categories: ["architecture", "processes"]
+    recommended_documents: ["arch-001", "arch-002", "proc-001", "guide-001"]
+    scanning_priority: "critical"
+    update_frequency: "daily"
+
+  pipe_bots:
+    primary_categories: ["processes", "infrastructure", "reference"]
+    recommended_documents: ["ref-001", "ref-005", "ref-009", "ref-010"]
+    scanning_priority: "high"
+    update_frequency: "on_commit"
+
+  eco_bots:
+    primary_categories: ["infrastructure", "reference"]
+    recommended_documents: ["arch-003", "ref-001", "ref-004"]
+    scanning_priority: "medium"
+    update_frequency: "weekly"
+
+  iv_bots:
+    primary_categories: ["architecture", "guides"]
+    recommended_documents: ["arch-002", "guide-002", "ref-002", "ref-006"]
+    scanning_priority: "high"
+    update_frequency: "daily"
+
+# Scanning Recommendations
+scanning_recommendations:
+  initial_scan:
+    order:
+      - "arch-001"  # Comprehensive overview
+      - "proc-001"  # How to access docs
+      - "guide-001" # Development practices
+      - "arch-002"  # Knowledge base architecture
+    estimated_time: "5-10 minutes"
+    token_estimate: 15000
+
+  daily_update_scan:
+    check_files:
+      - "docs/metadata.json"
+      - "docs/CHANGELOG.md"
+      - "docs/INDEX.md"
+    estimated_time: "1-2 minutes"
+    token_estimate: 2000
+
+  full_rescan:
+    frequency: "weekly"
+    estimated_time: "30-45 minutes"
+    token_estimate: 50000
+
+# API Access Endpoints
+api_endpoints:
+  metadata: "https://raw.githubusercontent.com/bsw-arch/bsw-arch/main/docs/metadata.json"
+  catalogue: "https://raw.githubusercontent.com/bsw-arch/bsw-arch/main/docs/catalogue.yaml"
+  index: "https://raw.githubusercontent.com/bsw-arch/bsw-arch/main/docs/INDEX.md"
+  changelog: "https://raw.githubusercontent.com/bsw-arch/bsw-arch/main/docs/CHANGELOG.md"
+  tree: "https://api.github.com/repos/bsw-arch/bsw-arch/git/trees/main?recursive=1"
+
+# Update Tracking
+last_update:
+  date: "2025-11-10"
+  commit: "2c95d2e"
+  changes: "Initial documentation consolidation"
+  documents_added: 22
+  documents_modified: 0
+  documents_removed: 0

@@ -1,0 +1,91 @@
+# ECO Infrastructure Bot Container Specification (apko)
+# Specialized container for infrastructure provisioning using OpenTofu
+
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    # Base system
+    - wolfi-base
+    - ca-certificates
+    - tzdata
+
+    # Runtime
+    - python-3.11
+    - py3-pip
+
+    # Essential tools
+    - git
+    - bash
+    - curl
+
+    # Infrastructure tools
+    - opentofu  # NOT terraform
+    - kubectl
+
+    # Python dependencies
+    - py3-prometheus-client
+    - py3-requests
+    - py3-yaml
+    - py3-kubernetes
+
+# Non-root user
+accounts:
+  groups:
+    - groupname: ecobot
+      gid: 65532
+  users:
+    - username: ecobot
+      uid: 65532
+      gid: 65532
+      home: /home/ecobot
+  run-as: 65532
+
+# Environment
+environment:
+  PYTHONPATH: /opt/documentation/bot-utils:/app
+  DOCS_PATH: /opt/documentation/docs
+  PYTHONUNBUFFERED: "1"
+  TZ: UTC
+  BOT_NAME: eco-infra-bot
+  BOT_DOMAIN: ECO
+  METRICS_PORT: "8000"
+  LOG_LEVEL: INFO
+
+  # OpenTofu configuration
+  TF_CLI_CONFIG_FILE: /home/ecobot/.tofurc
+  TF_PLUGIN_CACHE_DIR: /tmp/tofu-plugins
+
+  # FAGAM prohibition enforcement
+  FAGAM_CHECK_ENABLED: "true"
+
+# Exposed ports
+archs:
+  - x86_64
+  - aarch64
+
+# Container metadata
+annotations:
+  org.opencontainers.image.title: "ECO Infrastructure Bot"
+  org.opencontainers.image.description: "Infrastructure provisioning bot using OpenTofu (NOT Terraform)"
+  org.opencontainers.image.version: "1.0.0"
+  org.opencontainers.image.vendor: "BSW-Tech"
+  org.opencontainers.image.licenses: "MIT"
+
+  # BSW-specific
+  bsw.domain: "ECO"
+  bsw.bot-name: "eco-infra-bot"
+  bsw.bot-category: "infrastructure"
+  bsw.resource-tier: "large"
+  bsw.fagam-compliant: "true"
+  bsw.uses-opentofu: "true"
+  bsw.no-terraform: "true"
+
+# Entrypoint
+entrypoint:
+  command: /usr/bin/python3 /app/eco_infra_bot.py
+
+# Working directory
+work-dir: /app

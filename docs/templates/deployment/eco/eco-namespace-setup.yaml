@@ -1,0 +1,202 @@
+# ECO Bots Namespace Setup
+# Resource quotas, limits, network policies
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eco-bots
+  labels:
+    domain: ECO
+    bsw.domain: ECO
+    bsw.bot-factory: "true"
+    bsw.fagam-free: "true"
+  annotations:
+    description: "ECO domain - 48 infrastructure and operations bots"
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: eco-resource-quota
+  namespace: eco-bots
+spec:
+  hard:
+    # CPU limits for 48 bots
+    requests.cpu: "24"          # 48 * 0.5 CPU
+    limits.cpu: "48"            # 48 * 1 CPU max
+
+    # Memory limits for 48 bots
+    requests.memory: "24Gi"     # 48 * 512Mi
+    limits.memory: "48Gi"       # 48 * 1Gi max
+
+    # Storage
+    requests.storage: "240Gi"   # 48 * 5Gi
+
+    # Object limits
+    pods: "100"
+    services: "50"
+    configmaps: "50"
+    secrets: "50"
+    persistentvolumeclaims: "48"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: eco-container-limits
+  namespace: eco-bots
+spec:
+  limits:
+    # Container limits
+    - type: Container
+      max:
+        cpu: "1"
+        memory: "1Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
+      default:
+        cpu: "250m"
+        memory: "256Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+
+    # Pod limits
+    - type: Pod
+      max:
+        cpu: "2"
+        memory: "2Gi"
+
+    # PVC limits
+    - type: PersistentVolumeClaim
+      max:
+        storage: "10Gi"
+      min:
+        storage: "1Gi"
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: eco-default-deny
+  namespace: eco-bots
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: eco-allow-monitoring
+  namespace: eco-bots
+spec:
+  podSelector:
+    matchLabels:
+      domain: ECO
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow Prometheus to scrape metrics
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: eco-allow-dns
+  namespace: eco-bots
+spec:
+  podSelector:
+    matchLabels:
+      domain: ECO
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: eco-allow-https
+  namespace: eco-bots
+spec:
+  podSelector:
+    matchLabels:
+      domain: ECO
+  policyTypes:
+    - Egress
+  egress:
+    # Allow HTTPS for GitHub, Codeberg, etc.
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eco-global-config
+  namespace: eco-bots
+data:
+  # Documentation
+  DOCS_REPO_URL: "https://github.com/bsw-arch/bsw-arch.git"
+  DOCS_PATH: "/opt/documentation/docs"
+
+  # Bot factory settings
+  BOT_DOMAIN: "ECO"
+  BOT_FACTORY_NAME: "BSW-Arch"
+  TOTAL_BOTS: "185"
+  ECO_BOTS: "48"
+
+  # Resource limits
+  CONTAINER_SIZE_LIMIT: "52428800"  # 50MB in bytes
+  CPU_LIMIT: "500m"
+  MEMORY_LIMIT: "512Mi"
+
+  # Monitoring
+  METRICS_PORT: "8000"
+  HEALTH_CHECK_INTERVAL: "30"
+  LOG_LEVEL: "INFO"
+
+  # FAGAM prohibition
+  FAGAM_CHECK_ENABLED: "true"
+  FAGAM_PROHIBITED: "aws,google,azure,terraform,vault"
+  FAGAM_ALTERNATIVES: "opentofu,openbao"
+
+  # Codeberg
+  CODEBERG_ORG: "ECO-Bots"
+  CODEBERG_URL: "https://codeberg.org/ECO-Bots"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: eco-secrets
+  namespace: eco-bots
+type: Opaque
+stringData:
+  # These should be replaced with actual secrets in production
+  # Use OpenBao (NOT Vault) for secrets management
+  github-token: "REPLACE_ME"
+  codeberg-token: "REPLACE_ME"
+  prometheus-token: "REPLACE_ME"

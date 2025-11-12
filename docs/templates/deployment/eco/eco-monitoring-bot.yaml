@@ -1,0 +1,300 @@
+# Kubernetes Deployment for ECO Monitoring Bot
+# Part of BSW-Arch Bot Factory ECO Domain
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eco-bots
+  labels:
+    domain: ECO
+    bsw.domain: ECO
+    bsw.bot-factory: "true"
+    bsw.fagam-free: "true"
+  annotations:
+    description: "ECO domain bots - Infrastructure and operations"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eco-monitoring-bot
+  namespace: eco-bots
+  labels:
+    app: eco-monitoring-bot
+    domain: ECO
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: eco-monitoring-bot
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eco-monitoring-bot
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: eco-monitoring-bot
+subjects:
+  - kind: ServiceAccount
+    name: eco-monitoring-bot
+    namespace: eco-bots
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eco-config
+  namespace: eco-bots
+data:
+  DOCS_REPO_URL: "https://github.com/bsw-arch/bsw-arch.git"
+  DOCS_PATH: "/opt/documentation/docs"
+  BOT_DOMAIN: "ECO"
+  METRICS_PORT: "8000"
+  LOG_LEVEL: "INFO"
+  FAGAM_CHECK_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eco-monitoring-bot
+  namespace: eco-bots
+  labels:
+    app: eco-monitoring-bot
+    domain: ECO
+    bsw.bot-name: eco-monitoring-bot
+    bsw.bot-category: monitoring
+  annotations:
+    bsw.container-size-target: "<50MB"
+    bsw.resource-tier: "medium"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eco-monitoring-bot
+      domain: ECO
+  template:
+    metadata:
+      labels:
+        app: eco-monitoring-bot
+        domain: ECO
+        bsw.bot-name: eco-monitoring-bot
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: eco-monitoring-bot
+
+      # Init container to clone documentation
+      initContainers:
+        - name: clone-docs
+          image: cgr.dev/chainguard/git:latest
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -d /opt/documentation/.git ]; then
+                git clone https://github.com/bsw-arch/bsw-arch.git /opt/documentation
+              else
+                cd /opt/documentation && git pull
+              fi
+          volumeMounts:
+            - name: documentation
+              mountPath: /opt/documentation
+
+      containers:
+        - name: eco-monitoring-bot
+          image: eco-monitoring-bot:1.0.0
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: BOT_NAME
+              value: "eco-monitoring-bot"
+            - name: BOT_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: eco-config
+                  key: BOT_DOMAIN
+            - name: METRICS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: eco-config
+                  key: METRICS_PORT
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: eco-config
+                  key: LOG_LEVEL
+            - name: HEALTH_CHECK_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: eco-config
+                  key: HEALTH_CHECK_INTERVAL
+            - name: DOCS_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: eco-config
+                  key: DOCS_PATH
+
+          ports:
+            - name: metrics
+              containerPort: 8000
+              protocol: TCP
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          volumeMounts:
+            - name: documentation
+              mountPath: /opt/documentation
+              readOnly: true
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+      volumes:
+        - name: documentation
+          emptyDir: {}
+
+      # Security
+      securityContext:
+        fsGroup: 65532
+        runAsNonRoot: true
+
+      # Scheduling
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - eco-monitoring-bot
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eco-monitoring-bot
+  namespace: eco-bots
+  labels:
+    app: eco-monitoring-bot
+    domain: ECO
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+spec:
+  selector:
+    app: eco-monitoring-bot
+    domain: ECO
+  ports:
+    - name: metrics
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: eco-monitoring-bot
+  namespace: eco-bots
+  labels:
+    app: eco-monitoring-bot
+spec:
+  selector:
+    matchLabels:
+      app: eco-monitoring-bot
+  endpoints:
+    - port: metrics
+      interval: 15s
+      path: /metrics
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: eco-monitoring-bot
+  namespace: eco-bots
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: eco-monitoring-bot
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 85
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: eco-monitoring-bot
+  namespace: eco-bots
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: eco-monitoring-bot

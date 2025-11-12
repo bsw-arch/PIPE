@@ -1,0 +1,317 @@
+# ECO Bots Complete List
+# 48 specialized infrastructure and operations bots
+
+version: "1.0.0"
+domain: ECO
+total_bots: 48
+last_updated: "2025-11-10"
+
+categories:
+  infrastructure:
+    name: "Infrastructure Management"
+    bot_count: 8
+    bots:
+      - name: eco-infra-bot
+        description: "Infrastructure provisioning and management"
+        resource_tier: large
+        priority: critical
+
+      - name: eco-provision-bot
+        description: "Resource provisioning automation"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-config-bot
+        description: "Configuration management"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-terraform-bot
+        description: "OpenTofu operations (NOT Terraform)"
+        resource_tier: large
+        priority: high
+        notes: "Uses OpenTofu, NOT HashiCorp Terraform"
+
+      - name: eco-iacode-bot
+        description: "Infrastructure as Code management"
+        resource_tier: medium
+        priority: medium
+
+      - name: eco-cluster-bot
+        description: "Kubernetes cluster management"
+        resource_tier: large
+        priority: critical
+
+      - name: eco-node-bot
+        description: "Node management and health"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-namespace-bot
+        description: "Namespace management"
+        resource_tier: small
+        priority: medium
+
+  optimization:
+    name: "Resource Optimization"
+    bot_count: 8
+    bots:
+      - name: eco-resource-bot
+        description: "Resource allocation and optimization"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-scaler-bot
+        description: "Auto-scaling management"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-optimize-bot
+        description: "Performance optimization"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-efficiency-bot
+        description: "Resource efficiency analysis"
+        resource_tier: small
+        priority: medium
+
+      - name: eco-cost-bot
+        description: "Cost optimization and tracking"
+        resource_tier: small
+        priority: medium
+
+      - name: eco-capacity-bot
+        description: "Capacity planning"
+        resource_tier: medium
+        priority: medium
+
+      - name: eco-quota-bot
+        description: "Resource quota management"
+        resource_tier: small
+        priority: medium
+
+      - name: eco-limit-bot
+        description: "Resource limit enforcement"
+        resource_tier: small
+        priority: medium
+
+  monitoring:
+    name: "Monitoring & Observability"
+    bot_count: 8
+    bots:
+      - name: eco-monitoring-bot
+        description: "System monitoring and health checks"
+        resource_tier: medium
+        priority: critical
+
+      - name: eco-metrics-bot
+        description: "Metrics collection and analysis"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-log-bot
+        description: "Log aggregation and analysis"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-alert-bot
+        description: "Alerting and notification management"
+        resource_tier: small
+        priority: critical
+
+      - name: eco-healthcheck-bot
+        description: "Health check automation"
+        resource_tier: small
+        priority: high
+
+      - name: eco-status-bot
+        description: "Status dashboard and reporting"
+        resource_tier: small
+        priority: medium
+
+      - name: eco-trace-bot
+        description: "Distributed tracing"
+        resource_tier: medium
+        priority: medium
+
+      - name: eco-dashboard-bot
+        description: "Dashboard management"
+        resource_tier: small
+        priority: medium
+
+  container:
+    name: "Container & Registry"
+    bot_count: 6
+    bots:
+      - name: eco-container-bot
+        description: "Container lifecycle management"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-registry-bot
+        description: "Container registry operations"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-image-bot
+        description: "Image optimization (<50MB target)"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-cache-bot
+        description: "Build cache management"
+        resource_tier: medium
+        priority: medium
+
+      - name: eco-build-bot
+        description: "Container build automation"
+        resource_tier: large
+        priority: high
+
+      - name: eco-scan-bot
+        description: "Security scanning"
+        resource_tier: medium
+        priority: high
+
+  storage:
+    name: "Storage & Data"
+    bot_count: 6
+    bots:
+      - name: eco-storage-bot
+        description: "Storage management and optimization"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-backup-bot
+        description: "Backup automation"
+        resource_tier: medium
+        priority: critical
+
+      - name: eco-restore-bot
+        description: "Restore and recovery operations"
+        resource_tier: medium
+        priority: critical
+
+      - name: eco-archive-bot
+        description: "Data archiving and retention"
+        resource_tier: medium
+        priority: medium
+
+      - name: eco-snapshot-bot
+        description: "Snapshot management"
+        resource_tier: small
+        priority: medium
+
+      - name: eco-volume-bot
+        description: "Volume management"
+        resource_tier: small
+        priority: medium
+
+  network:
+    name: "Network & Connectivity"
+    bot_count: 5
+    bots:
+      - name: eco-network-bot
+        description: "Network configuration and management"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-gateway-bot
+        description: "API gateway and routing"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-loadbalancer-bot
+        description: "Load balancing management"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-dns-bot
+        description: "DNS management and updates"
+        resource_tier: small
+        priority: medium
+
+      - name: eco-ingress-bot
+        description: "Ingress management"
+        resource_tier: medium
+        priority: high
+
+  security:
+    name: "Security & Compliance"
+    bot_count: 4
+    bots:
+      - name: eco-security-bot
+        description: "Security hardening and scanning"
+        resource_tier: medium
+        priority: critical
+
+      - name: eco-secrets-bot
+        description: "Secrets management (OpenBao, NOT Vault)"
+        resource_tier: medium
+        priority: critical
+        notes: "Uses OpenBao, NOT HashiCorp Vault"
+
+      - name: eco-compliance-bot
+        description: "Compliance checking and reporting"
+        resource_tier: small
+        priority: high
+
+      - name: eco-firewall-bot
+        description: "Firewall rules management"
+        resource_tier: small
+        priority: high
+
+  maintenance:
+    name: "Maintenance & Cleanup"
+    bot_count: 3
+    bots:
+      - name: eco-cleanup-bot
+        description: "Resource cleanup and garbage collection"
+        resource_tier: small
+        priority: medium
+
+      - name: eco-maintenance-bot
+        description: "Scheduled maintenance operations"
+        resource_tier: medium
+        priority: medium
+
+      - name: eco-upgrade-bot
+        description: "System upgrade automation"
+        resource_tier: medium
+        priority: high
+
+      - name: eco-patch-bot
+        description: "Security patching automation"
+        resource_tier: medium
+        priority: high
+
+# Resource tiers
+resource_tiers:
+  small:
+    cpu_request: "100m"
+    cpu_limit: "200m"
+    memory_request: "128Mi"
+    memory_limit: "256Mi"
+    storage: "1Gi"
+
+  medium:
+    cpu_request: "250m"
+    cpu_limit: "500m"
+    memory_request: "256Mi"
+    memory_limit: "512Mi"
+    storage: "2Gi"
+
+  large:
+    cpu_request: "500m"
+    cpu_limit: "1"
+    memory_request: "512Mi"
+    memory_limit: "1Gi"
+    storage: "5Gi"
+
+# Priority levels
+priorities:
+  critical: "Must be running at all times"
+  high: "Important for operations"
+  medium: "Standard priority"
+  low: "Can be delayed if resources constrained"

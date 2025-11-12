@@ -1,0 +1,27 @@
+# IV Bot Python Dependencies with Knowledge Graph Integration
+
+# Knowledge Graph and Vector Store
+neo4j==5.14.0
+chromadb==0.4.18
+sentence-transformers==2.2.2
+
+# AI/ML Libraries
+torch>=2.0.0
+transformers>=4.35.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Data Processing
+pandas>=2.0.0
+pyyaml>=6.0.1
+
+# HTTP and API
+aiohttp>=3.9.0
+requests>=2.31.0
+
+# Async Support
+asyncio-mqtt>=0.16.0
+
+# Utilities
+python-dotenv>=1.0.0
+watchdog>=3.0.0

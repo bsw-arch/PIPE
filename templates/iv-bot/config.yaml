@@ -1,0 +1,87 @@
+# IV Bot Configuration Template
+# Part of BSW-Arch AI Development Platform
+
+# Bot Identity
+bot_name: "iv-example-bot"
+bot_type: "intelligence"  # intelligence, validation, rag, ai-ml, nlp, knowledge, data-analysis, conversational
+domain: "IV"
+
+# Knowledge Graph (Neo4j)
+neo4j:
+  uri: "bolt://neo4j:7687"
+  user: "neo4j"
+  password: "password"
+  # In production, use environment variables:
+  # uri: ${NEO4J_URI}
+  # user: ${NEO4J_USER}
+  # password: ${NEO4J_PASSWORD}
+
+# Vector Store (ChromaDB)
+chromadb:
+  host: "chromadb"
+  port: 8000
+  collections:
+    - "code_embeddings"
+    - "specifications"
+    - "documentation"
+
+# LLM (Ollama)
+ollama:
+  host: "http://ollama:11434"
+  model: "deepseek-coder:6.7b"
+  fallback_model: "llama2:7b"
+  temperature: 0.7
+  max_tokens: 2000
+
+# RAG Configuration
+rag:
+  enabled: true
+  max_context_chunks: 5
+  embedding_model: "all-MiniLM-L6-v2"
+  search_strategy: "hybrid"  # hybrid, vector, graph
+  reranking: false
+
+# Continuous Learning
+learning:
+  enabled: true
+  feedback_collection: true
+  auto_update_interval: 3600  # seconds
+
+# Bot Capabilities
+capabilities:
+  - "code_analysis"
+  - "documentation_search"
+  - "spec_validation"
+  - "knowledge_graph_query"
+  - "rag_query"
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "/app/logs/bot.log"
+  max_size_mb: 100
+  backup_count: 5
+
+# Integration
+integration:
+  github:
+    enabled: false
+    token: ""  # Set via environment: GITHUB_TOKEN
+    api_url: "https://api.github.com"
+
+  proton_drive:
+    enabled: false
+    remote_path: ""  # e.g., protondrive:BSW-Arch/docs
+    sync_interval: 300  # seconds
+
+# Performance
+performance:
+  max_concurrent_queries: 5
+  query_timeout: 30  # seconds
+  cache_ttl: 3600  # seconds
+
+# Security
+security:
+  FAGAM_compliance: true  # No Facebook, Apple, Google, Amazon, Microsoft
+  encrypt_sensitive_data: true
+  audit_logging: true

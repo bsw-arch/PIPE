@@ -1,0 +1,54 @@
+# ECO Monitoring Bot - Dockerfile
+# Base: Chainguard Wolfi (~15MB)
+# Target: <50MB total
+
+FROM cgr.dev/chainguard/wolfi-base:latest
+
+# Install runtime dependencies
+# Using apk from Wolfi
+RUN apk add --no-cache \
+    git \
+    python-3.11 \
+    py3-pip \
+    bash \
+    procps
+
+# Clone documentation repository
+WORKDIR /opt
+RUN git clone https://github.com/bsw-arch/bsw-arch.git documentation
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    pyyaml \
+    requests \
+    prometheus-client \
+    psutil && \
+    rm -rf ~/.cache/pip
+
+# Add bot-utils to Python path
+ENV PYTHONPATH="/opt/documentation/bot-utils:$PYTHONPATH"
+ENV DOCS_PATH="/opt/documentation/docs"
+ENV PYTHONUNBUFFERED="1"
+
+# Copy bot code
+WORKDIR /app
+COPY eco_monitoring_bot.py /app/
+
+# Create non-root user
+RUN addgroup -g 65532 ecobot && \
+    adduser -u 65532 -G ecobot -s /bin/sh -D ecobot && \
+    chown -R ecobot:ecobot /app && \
+    chown -R ecobot:ecobot /opt/documentation
+
+# Switch to non-root user
+USER ecobot
+
+# Expose metrics port
+EXPOSE 8000
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000').read()" || exit 1
+
+# Run bot
+CMD ["python3", "eco_monitoring_bot.py"]

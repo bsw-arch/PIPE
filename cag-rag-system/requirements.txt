@@ -1,0 +1,37 @@
+# BSW-Arch CAG+RAG System Dependencies
+# Python 3.11+
+
+# Core dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+
+# Database clients
+redis>=5.0.0
+motor>=3.3.0  # Async MongoDB
+neo4j>=5.13.0
+psycopg[binary]>=3.1.0  # PostgreSQL
+
+# ML/NLP (optional but recommended)
+transformers>=4.35.0
+torch>=2.1.0
+sentence-transformers>=2.2.0
+
+# Vector search
+faiss-cpu>=1.7.4
+
+# Utilities
+pyyaml>=6.0.1
+python-multipart>=0.0.6
+httpx>=0.25.0
+
+# Monitoring
+prometheus-client>=0.18.0
+
+# Development
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Optional: For production
+gunicorn>=21.2.0
