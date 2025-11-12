@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  pipe-bots:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pipe-domain-bots
+    restart: unless-stopped
+    environment:
+      - PIPE_LOG_LEVEL=INFO
+      - PIPE_STATE_DIR=/app/state
+    volumes:
+      - ./state:/app/state
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    networks:
+      - pipe-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  pipe-network:
+    driver: bridge

@@ -1,0 +1,67 @@
+# PIPE Domain Bot System Configuration
+
+# State management
+state_dir: "./state"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  file: "./logs/pipe_bots.log"
+
+# Bot configurations
+bots:
+  # Pipeline automation bot
+  pipeline:
+    enabled: true
+    check_interval: 30
+    log_level: "INFO"
+    default_pipelines:
+      - id: "build_pipeline"
+        name: "Build Pipeline"
+        enabled: true
+        schedule: null
+        stages:
+          - name: "checkout"
+            type: "task"
+            duration: 1
+          - name: "build"
+            type: "task"
+            duration: 3
+          - name: "test"
+            type: "task"
+            duration: 2
+          - name: "deploy"
+            type: "task"
+            duration: 2
+
+      - id: "data_pipeline"
+        name: "Data Processing Pipeline"
+        enabled: true
+        schedule: null
+        stages:
+          - name: "extract"
+            type: "task"
+            duration: 2
+          - name: "transform"
+            type: "task"
+            duration: 3
+          - name: "load"
+            type: "task"
+            duration: 2
+
+  # Data processor bot
+  data_processor:
+    enabled: true
+    num_workers: 3
+    status_interval: 30
+    log_level: "INFO"
+
+  # Monitor bot
+  monitor:
+    enabled: true
+    monitor_interval: 60
+    health_check_interval: 30
+    silence_threshold_seconds: 300
+    error_threshold: 10
+    alert_retention_hours: 24
+    log_level: "INFO"
