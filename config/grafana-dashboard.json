@@ -1,0 +1,294 @@
+{
+  "dashboard": {
+    "title": "PIPE Bot System - Monitoring Dashboard",
+    "tags": ["pipe", "bots", "governance"],
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "count(pipe_bot_status == 1)",
+            "legendFormat": "Running Bots",
+            "refId": "A"
+          },
+          {
+            "expr": "pipe_governance_domains_active",
+            "legendFormat": "Active Domains",
+            "refId": "B"
+          },
+          {
+            "expr": "pipe_governance_integrations_active",
+            "legendFormat": "Active Integrations",
+            "refId": "C"
+          },
+          {
+            "expr": "pipe_governance_compliance_percentage",
+            "legendFormat": "Compliance %",
+            "refId": "D"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Bot Status",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "targets": [
+          {
+            "expr": "pipe_bot_status",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "__name__": true},
+              "indexByName": {},
+              "renameByName": {
+                "bot": "Bot Name",
+                "status": "Status",
+                "Value": "Running"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Bot Uptime",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+        "targets": [
+          {
+            "expr": "pipe_bot_uptime_seconds",
+            "legendFormat": "{{bot}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Uptime"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Bot Task Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+        "targets": [
+          {
+            "expr": "rate(pipe_bot_tasks_total[5m])",
+            "legendFormat": "{{bot}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Tasks/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Bot Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+        "targets": [
+          {
+            "expr": "rate(pipe_bot_errors_total[5m])",
+            "legendFormat": "{{bot}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Errors/sec"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "name": "High Error Rate",
+          "conditions": [
+            {
+              "evaluator": {"params": [0.1], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Bot error rate is above threshold",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 6,
+        "title": "Governance Compliance",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 20},
+        "targets": [
+          {
+            "expr": "pipe_governance_compliance_percentage",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "orientation": "auto",
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 50},
+                {"color": "green", "value": 75}
+              ]
+            },
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Active Domains",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 20},
+        "targets": [
+          {
+            "expr": "pipe_governance_domains_active",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Active Integrations",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 20},
+        "targets": [
+          {
+            "expr": "pipe_governance_integrations_active",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Review Backlog",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+        "targets": [
+          {
+            "expr": "pipe_governance_reviews_pending",
+            "legendFormat": "Pending",
+            "refId": "A"
+          },
+          {
+            "expr": "pipe_governance_reviews_approved",
+            "legendFormat": "Approved",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Reviews"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Processing Time (avg)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+        "targets": [
+          {
+            "expr": "pipe_data_processor_processing_time_avg",
+            "legendFormat": "Avg Processing Time",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Time"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Event Bus Activity",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 34},
+        "targets": [
+          {
+            "expr": "rate(pipe_events_published[5m])",
+            "legendFormat": "Published",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(pipe_events_processed[5m])",
+            "legendFormat": "Processed",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Events/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Data Queue Size",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 34},
+        "targets": [
+          {
+            "expr": "pipe_data_processor_queue_size",
+            "legendFormat": "Queue Size",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Items"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "name": "High Queue Size",
+          "conditions": [
+            {
+              "evaluator": {"params": [100], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "frequency": "1m",
+          "handler": 1,
+          "message": "Data processor queue is growing",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 30,
+    "version": 1
+  },
+  "overwrite": true
+}
