@@ -1,0 +1,245 @@
+# Cilium Network Policies for PIPE System
+# Implements zero-trust networking with domain isolation
+
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: pipe-hub-policy
+  namespace: pipe-bots
+spec:
+  endpointSelector:
+    matchLabels:
+      app: integration-hub-bot
+  ingress:
+    # Allow from all domain namespaces
+    - fromEndpoints:
+        - matchExpressions:
+            - key: io.kubernetes.pod.namespace
+              operator: In
+              values:
+                - pipe-domain-bni
+                - pipe-domain-bnp
+                - pipe-domain-axis
+                - pipe-domain-iv
+                - pipe-domain-ecox
+                - pipe-domain-thrive
+                - pipe-domain-dc
+                - pipe-domain-bu
+                - pipe-domain-pipe
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/integration"
+              - method: "GET"
+                path: "/api/v1/status"
+  egress:
+    # Allow to all domain namespaces
+    - toEndpoints:
+        - matchExpressions:
+            - key: io.kubernetes.pod.namespace
+              operator: In
+              values:
+                - pipe-domain-bni
+                - pipe-domain-bnp
+                - pipe-domain-axis
+                - pipe-domain-iv
+                - pipe-domain-ecox
+                - pipe-domain-thrive
+                - pipe-domain-dc
+                - pipe-domain-bu
+                - pipe-domain-pipe
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # Allow DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # Allow to OpenBao
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openbao-system
+            app: openbao
+      toPorts:
+        - ports:
+            - port: "8200"
+              protocol: TCP
+    # Allow to Zitadel
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: zitadel-system
+            app: zitadel
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: domain-isolation-policy
+  namespace: pipe-domain-bni
+spec:
+  endpointSelector: {}
+  ingress:
+    # Only allow from PIPE hub
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pipe-bots
+            app: integration-hub-bot
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    # Only allow to PIPE hub
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pipe-bots
+            app: integration-hub-bot
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # Allow DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    # Deny all other egress (default deny)
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: governance-policy
+  namespace: pipe-governance
+spec:
+  endpointSelector:
+    matchLabels:
+      app: governance-manager
+  ingress:
+    # Allow from PIPE hub and monitoring
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pipe-bots
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: pipe-monitoring
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    # Allow to all namespaces for governance oversight
+    - toEndpoints:
+        - matchExpressions:
+            - key: io.kubernetes.pod.namespace
+              operator: Exists
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # Allow DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    # Allow to OpenBao
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openbao-system
+            app: openbao
+      toPorts:
+        - ports:
+            - port: "8200"
+              protocol: TCP
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  endpointSelector: {}
+  policyEnforcement: default
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-healthchecks
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - health
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "9090"
+              protocol: TCP
+
+---
+# L7 Policy for HTTP traffic inspection
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: l7-http-policy
+  namespace: pipe-bots
+spec:
+  endpointSelector:
+    matchLabels:
+      app: data-processor-bot
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: integration-hub-bot
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/api/v1/process"
+                headers:
+                  - "Content-Type: application/json"
+              - method: "GET"
+                path: "/api/v1/status"
+
+---
+# Encryption enforcement
+apiVersion: "cilium.io/v2"
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: require-encryption
+spec:
+  endpointSelector: {}
+  enableDefaultDeny:
+    egress: false
+    ingress: false
+  encryption:
+    nodeEncryption: true

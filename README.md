@@ -156,13 +156,43 @@ BNI, BNP, AXIS, IV, EcoX, THRIVE, DC, BU, PIPE
 
 ---
 
+## 🏗️ Modern Open-Source Infrastructure
+
+PIPE uses **100% open-source** infrastructure stack:
+
+### ✅ Technologies We Use
+
+- **OpenTofu** - Infrastructure as Code (Terraform alternative)
+- **Ansible** - Configuration management and automation
+- **Helm** - Kubernetes package management
+- **OpenBao** - Secrets management (Vault alternative)
+- **Zitadel** - Identity and access management
+- **Zot** - OCI-native container registry
+- **Cosign** - Container image signing and verification
+- **Cilium** - eBPF-based Kubernetes networking
+
+### ❌ Forbidden Technologies
+
+The following HashiCorp products are **NOT ALLOWED**:
+
+- ❌ **HashiCorp Vault** → Use **OpenBao** instead
+- ❌ **HashiCorp Consul** → Use **Kubernetes native** service discovery
+- ❌ **HashiCorp Terraform** → Use **OpenTofu** instead
+
+**See [INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) for complete infrastructure guide**
+
+---
+
 ## 📦 Installation
 
 ### Prerequisites
 
 - Python 3.9 or higher
-- pip package manager
-- Docker (optional, for containerized deployment)
+- Kubernetes cluster (with Cilium CNI)
+- OpenTofu 1.6+
+- Ansible 2.9+
+- Helm 3.x
+- kubectl
 
 ### Local Installation
 
@@ -288,19 +318,35 @@ PIPE/
 │   ├── bots/              # Bot implementations
 │   │   ├── pipeline_bot.py
 │   │   ├── data_processor_bot.py
-│   │   └── monitor_bot.py
+│   │   ├── monitor_bot.py
+│   │   └── integration_hub_bot.py
+│   ├── governance/        # Governance system
+│   ├── integrations/      # Infrastructure integrations (NEW)
+│   │   ├── openbao_client.py    # OpenBao secrets
+│   │   └── zitadel_client.py    # Zitadel IAM
 │   ├── utils/             # Utility modules
 │   │   ├── logger.py
 │   │   ├── metrics.py
 │   │   └── retry.py
 │   ├── config/            # Configuration management
 │   └── main.py            # Application entry point
-├── tests/                 # Test suite
+├── infrastructure/        # Infrastructure as Code (NEW)
+│   ├── opentofu/         # OpenTofu modules
+│   ├── ansible/          # Ansible playbooks
+│   └── cilium/           # Cilium network policies
+├── charts/               # Helm charts (NEW)
+│   └── pipe-bots/       # PIPE deployments
+├── scripts/              # Deployment scripts (NEW)
+│   ├── cosign/          # Image signing
+│   └── zot/             # Registry deployment
+├── tests/                # Test suite
 │   ├── unit/
 │   └── integration/
-├── config/                # Configuration files
-├── scripts/               # Utility scripts
-├── docs/                  # Documentation
+├── config/               # Configuration files
+├── docs/                 # Documentation
+│   ├── ARCHITECTURE.md
+│   ├── GOVERNANCE.md
+│   └── INFRASTRUCTURE.md  # NEW
 ├── Dockerfile
 ├── docker-compose.yml
 └── requirements.txt
@@ -351,7 +397,37 @@ The project maintains >80% test coverage across:
 
 ## 🚢 Deployment
 
-### Docker Deployment
+### Production Deployment
+
+```bash
+# 1. Provision infrastructure with OpenTofu (NOT Terraform!)
+cd infrastructure/opentofu
+tofu init
+tofu plan -out=tfplan
+tofu apply tfplan
+
+# 2. Deploy with Ansible
+cd ../ansible
+ansible-playbook -i inventory/production deploy-pipe.yml
+
+# 3. Or deploy directly with Helm
+helm install pipe-bots charts/pipe-bots/ -n pipe-bots --create-namespace
+```
+
+### Sign Container Images
+
+```bash
+# Generate Cosign keypair
+./scripts/cosign/sign-images.sh generate-keypair
+
+# Sign all PIPE images
+./scripts/cosign/sign-images.sh sign v1.0.0
+
+# Verify signature
+./scripts/cosign/sign-images.sh verify v1.0.0 zot.pipe.local/pipe/pipeline-bot:v1.0.0
+```
+
+### Docker Deployment (Local)
 
 ```bash
 # Build and run
@@ -366,11 +442,15 @@ docker-compose down
 
 ### Production Considerations
 
-- Use environment-specific configuration files
+- Use OpenBao for all secrets (NO Vault!)
+- Deploy Cilium CNI for network policies
+- Enforce Cosign signature verification
+- Configure Zitadel for authentication
+- Use Zot registry for container images
 - Set up proper logging aggregation
 - Configure persistent volumes for state
 - Implement health check endpoints
-- Set up monitoring and alerting
+- Set up Prometheus/Grafana monitoring
 
 ---
 
@@ -452,3 +532,50 @@ For questions or support, please contact the BSW Architecture team.
 ---
 
 **Built with ❤️ for the BSW Architecture PIPE Domain**
+
+**Made with 100% open-source technologies - NO HASHICORP PRODUCTS!**
+
+---
+
+## 🔐 Infrastructure Integrations
+
+### OpenBao (Secrets Management)
+
+```python
+from integrations.openbao_client import get_openbao_client
+
+# Authenticate with Kubernetes
+client = await get_openbao_client(
+    address="http://openbao-system.svc.cluster.local:8200",
+    kubernetes_role="pipe-bot"
+)
+
+# Read secrets
+secret = await client.read_secret("secret/data/pipe/config")
+
+# Encrypt data
+ciphertext = await client.encrypt("sensitive data")
+
+# Generate TLS certificate
+cert = await client.generate_certificate("pipe.local", ttl="24h")
+```
+
+### Zitadel (Identity & Access Management)
+
+```python
+from integrations.zitadel_client import get_zitadel_client
+
+# Get access token
+client = await get_zitadel_client(
+    issuer="https://zitadel-system.svc.cluster.local",
+    client_id="pipe-bot"
+)
+
+token = await client.get_access_token()
+
+# Verify token
+claims = await client.verify_token(user_token)
+
+# Check permissions
+has_perm = await client.check_permission(user_id, "integration-reviewer")
+```

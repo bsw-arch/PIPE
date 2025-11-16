@@ -1,0 +1,278 @@
+# Default values for PIPE Bot System
+# This is a YAML-formatted file.
+
+# IMPORTANT: Uses open-source alternatives only
+# ❌ NO HashiCorp Vault - Use OpenBao
+# ❌ NO HashiCorp Consul - Use Kubernetes native
+# ❌ NO HashiCorp Terraform - Use OpenTofu
+
+replicaCount: 1
+
+image:
+  registry: zot.pipe.local
+  pullPolicy: IfNotPresent
+  # Image tag defaults to chart appVersion if not set
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# OpenBao (Vault replacement) configuration
+openbao:
+  enabled: true
+  address: "http://openbao-system.svc.cluster.local:8200"
+  authMethod: kubernetes
+  role: pipe-bot
+  secretsPath: secret/data/pipe
+
+  # Transit encryption
+  transit:
+    enabled: true
+    keyName: pipe
+
+  # PKI for certificates
+  pki:
+    enabled: true
+    role: pipe
+    commonName: pipe.local
+
+# Zitadel (IAM) configuration
+zitadel:
+  enabled: true
+  issuer: "https://zitadel-system.svc.cluster.local"
+  projectId: ""
+
+  # Service accounts for bots
+  serviceAccounts:
+    - name: pipeline-bot
+      roles:
+        - bot-operator
+    - name: data-processor-bot
+      roles:
+        - bot-operator
+    - name: monitor-bot
+      roles:
+        - bot-operator
+        - monitoring-viewer
+    - name: integration-hub-bot
+      roles:
+        - bot-operator
+        - integration-manager
+    - name: governance-manager
+      roles:
+        - governance-admin
+        - compliance-auditor
+
+# Zot Registry configuration
+zot:
+  enabled: true
+  url: "https://zot.pipe.local"
+
+  # Cosign signature verification
+  cosign:
+    enforce: true
+    publicKeySecret: pipe-cosign-public-key
+
+# Cilium network policies
+cilium:
+  enabled: true
+  networkPolicy:
+    enabled: true
+    defaultDeny: true
+
+  # L7 policy enforcement
+  l7Policy:
+    enabled: true
+    http:
+      enabled: true
+
+  # Encryption
+  encryption:
+    enabled: true
+    nodeEncryption: true
+
+# Bot configurations
+bots:
+  pipelineBot:
+    enabled: true
+    replicas: 1
+    checkInterval: 30
+    maxConcurrentPipelines: 10
+
+  dataProcessorBot:
+    enabled: true
+    replicas: 2
+    numWorkers: 5
+    queueSize: 1000
+    statusInterval: 30
+
+  monitorBot:
+    enabled: true
+    replicas: 1
+    monitorInterval: 60
+    healthCheckInterval: 30
+    silenceThreshold: 300
+    errorThreshold: 10
+
+  integrationHubBot:
+    enabled: true
+    replicas: 2
+    maxConnections: 100
+    timeout: 30
+
+# Governance configuration
+governance:
+  enabled: true
+  replicas: 1
+
+  domains:
+    - bni
+    - bnp
+    - axis
+    - iv
+    - ecox
+    - thrive
+    - dc
+    - bu
+    - pipe
+
+  approval:
+    requiredReviewers: 2
+    autoApproveTimeout: 72h
+
+  compliance:
+    checkInterval: 3600
+    categories:
+      - integration_standards
+      - quality_metrics
+      - security_policy
+      - data_governance
+      - review_process
+
+# Resource limits
+resources:
+  bot:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  governance:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: pipe.pipe.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: pipe-tls
+      hosts:
+        - pipe.pipe.local
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    port: 9090
+    scrapeInterval: 15s
+
+  grafana:
+    enabled: true
+    dashboards:
+      - governance
+      - bots
+      - integrations
+
+  serviceMonitor:
+    enabled: true
+
+# Security
+security:
+  podSecurityPolicy:
+    enabled: true
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    capabilities:
+      drop:
+        - ALL
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations:
+    openbao.io/role: "pipe-bot"
+    openbao.io/agent-inject: "true"
+  name: ""
+
+# Autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+# ConfigMap data
+config:
+  logLevel: INFO
+  logFormat: json
+
+# Backup
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: 30
+  s3:
+    bucket: pipe-backups
+    endpoint: ""
+    region: eu-central-1

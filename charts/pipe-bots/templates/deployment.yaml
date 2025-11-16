@@ -1,0 +1,121 @@
+{{- range $botName, $botConfig := .Values.bots }}
+{{- if $botConfig.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pipe-bots.fullname" $ }}-{{ $botName | kebabcase }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "pipe-bots.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $botName | kebabcase }}
+  annotations:
+    forbidden.hashicorp/vault: "Using OpenBao instead"
+    forbidden.hashicorp/terraform: "Using OpenTofu instead"
+spec:
+  replicas: {{ $botConfig.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "pipe-bots.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $botName | kebabcase }}
+  template:
+    metadata:
+      annotations:
+        openbao.io/agent-inject: "true"
+        openbao.io/role: {{ $.Values.openbao.role | quote }}
+        openbao.io/agent-inject-secret-config: {{ $.Values.openbao.secretsPath }}/{{ $botName }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+      labels:
+        {{- include "pipe-bots.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $botName | kebabcase }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "pipe-bots.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.security.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ $botName | kebabcase }}
+        securityContext:
+          {{- toYaml $.Values.security.containerSecurityContext | nindent 12 }}
+        image: "{{ $.Values.image.registry }}/pipe/{{ $botName | kebabcase }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+        imagePullPolicy: {{ $.Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: BOT_NAME
+          value: {{ $botName | quote }}
+        - name: OPENBAO_ADDR
+          value: {{ $.Values.openbao.address | quote }}
+        - name: OPENBAO_ROLE
+          value: {{ $.Values.openbao.role | quote }}
+        - name: ZITADEL_ISSUER
+          value: {{ $.Values.zitadel.issuer | quote }}
+        - name: LOG_LEVEL
+          value: {{ $.Values.config.logLevel | quote }}
+        - name: LOG_FORMAT
+          value: {{ $.Values.config.logFormat | quote }}
+        {{- if $.Values.cilium.enabled }}
+        - name: NETWORK_POLICY_ENABLED
+          value: "true"
+        {{- end }}
+        {{- if $.Values.zot.cosign.enforce }}
+        - name: COSIGN_ENFORCE
+          value: "true"
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          {{- toYaml $.Values.resources.bot | nindent 12 }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pipe
+          readOnly: true
+        - name: state
+          mountPath: /var/lib/pipe/state
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "pipe-bots.fullname" $ }}-config
+      - name: state
+        {{- if $.Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "pipe-bots.fullname" $ }}-{{ $botName | kebabcase }}-state
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: tmp
+        emptyDir: {}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

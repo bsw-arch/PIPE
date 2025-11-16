@@ -1,0 +1,47 @@
+apiVersion: v2
+name: pipe-bots
+description: PIPE Domain Bot System - Enterprise Bot Automation with Governance
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - pipe
+  - bots
+  - automation
+  - governance
+  - integration
+home: https://github.com/bsw-arch/PIPE
+sources:
+  - https://github.com/bsw-arch/PIPE
+maintainers:
+  - name: PIPE Team
+    email: pipe@bsw-arch.local
+
+# Infrastructure dependencies (open-source only, NO HashiCorp)
+dependencies:
+  - name: openbao
+    version: "~0.1.0"
+    repository: "https://openbao.github.io/openbao-helm"
+    condition: openbao.enabled
+    tags:
+      - security
+  - name: zitadel
+    version: "~7.0.0"
+    repository: "https://charts.zitadel.com"
+    condition: zitadel.enabled
+    tags:
+      - security
+      - iam
+
+annotations:
+  # Forbidden technologies
+  forbidden.hashicorp/vault: "Use OpenBao instead"
+  forbidden.hashicorp/consul: "Use Kubernetes service discovery"
+  forbidden.hashicorp/terraform: "Use OpenTofu instead"
+
+  # Required technologies
+  required/openbao: "true"
+  required/zitadel: "true"
+  required/zot: "true"
+  required/cilium: "true"
+  required/cosign: "true"
