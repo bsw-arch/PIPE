@@ -163,11 +163,28 @@ def export_governance_state(
     """
     try:
         # Collect all governance data
+        active_domains = governance.domain_registry.list_active_domains()
+        domain_details = [
+            {
+                "domain_code": code,
+                **governance.domain_registry.get_domain_info(code),
+            }
+            for code in active_domains
+        ]
+
         state = {
             "exported_at": datetime.now().isoformat(),
-            "domains": governance.domain_registry.list_domains(),
+            "domains": domain_details,
             "integrations": governance.domain_registry.list_integrations(),
-            "reviews": governance.review_pipeline.list_reviews(),
+            "reviews": [
+                {
+                    "review_id": rid,
+                    "status": review["status"].value,
+                    "reviewers": review["reviewers"],
+                    "created_at": review["created_at"],
+                }
+                for rid, review in governance.review_pipeline.reviews.items()
+            ],
             "compliance_records": list(
                 governance.compliance_tracker.compliance_records.values()
             ),
@@ -445,7 +462,7 @@ def get_integration_health_status(governance: GovernanceManager) -> Dict[str, An
         print(f"Health Score: {health['health_score']}/100")
     """
     integrations = governance.domain_registry.list_integrations()
-    reviews = governance.review_pipeline.list_reviews()
+    reviews = list(governance.review_pipeline.reviews.values())
 
     status_counts = {"connected": 0, "pending": 0, "degraded": 0, "disconnected": 0}
 

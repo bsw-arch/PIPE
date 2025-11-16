@@ -117,7 +117,8 @@ class MetricsServer:
 
             return web.Response(
                 text=metrics_text,
-                content_type="text/plain; version=0.0.4; charset=utf-8",
+                content_type="text/plain; version=0.0.4",
+                charset="utf-8",
             )
         except Exception as e:
             self.logger.error(f"Error generating metrics: {str(e)}", exc_info=True)
