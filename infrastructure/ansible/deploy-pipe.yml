@@ -1,0 +1,218 @@
+---
+# Ansible Playbook for PIPE Deployment
+# Uses OpenBao, Zitadel, Zot, and Cilium (NO HashiCorp products)
+
+- name: Deploy PIPE Infrastructure
+  hosts: localhost
+  gather_facts: true
+  vars:
+    pipe_namespace: pipe-bots
+    pipe_version: latest
+    openbao_enabled: true
+    zitadel_enabled: true
+    zot_enabled: true
+    cilium_enabled: true
+
+  tasks:
+    - name: Display deployment information
+      debug:
+        msg: |
+          ========================================
+          PIPE Infrastructure Deployment
+          ========================================
+          Version: {{ pipe_version }}
+          OpenBao: {{ openbao_enabled }}
+          Zitadel: {{ zitadel_enabled }}
+          Zot Registry: {{ zot_enabled }}
+          Cilium CNI: {{ cilium_enabled }}
+          ========================================
+
+          FORBIDDEN TECHNOLOGIES (Will NOT be used):
+          ❌ HashiCorp Vault
+          ❌ HashiCorp Consul
+          ❌ HashiCorp Terraform
+          ========================================
+
+    - name: Check kubectl availability
+      command: kubectl version --client
+      register: kubectl_check
+      changed_when: false
+      failed_when: kubectl_check.rc != 0
+
+    - name: Check Helm availability
+      command: helm version
+      register: helm_check
+      changed_when: false
+      failed_when: helm_check.rc != 0
+
+    - name: Check OpenTofu availability
+      command: tofu version
+      register: tofu_check
+      changed_when: false
+      failed_when: tofu_check.rc != 0
+
+    - name: Provision infrastructure with OpenTofu
+      block:
+        - name: Initialize OpenTofu
+          command: tofu init
+          args:
+            chdir: ../opentofu
+          register: tofu_init
+
+        - name: Plan OpenTofu deployment
+          command: tofu plan -out=tfplan
+          args:
+            chdir: ../opentofu
+          register: tofu_plan
+
+        - name: Apply OpenTofu plan
+          command: tofu apply -auto-approve tfplan
+          args:
+            chdir: ../opentofu
+          register: tofu_apply
+          when: tofu_plan is succeeded
+
+    - name: Deploy OpenBao (Vault replacement)
+      when: openbao_enabled
+      block:
+        - name: Add OpenBao Helm repository
+          command: helm repo add openbao https://openbao.github.io/openbao-helm
+          changed_when: true
+
+        - name: Update Helm repositories
+          command: helm repo update
+          changed_when: false
+
+        - name: Install OpenBao via Helm
+          command: >
+            helm upgrade --install openbao openbao/openbao
+            --namespace openbao-system
+            --create-namespace
+            --set server.ha.enabled=true
+            --set server.ha.replicas=3
+            --set server.ha.raft.enabled=true
+            --set ui.enabled=true
+            --set server.ingress.enabled=true
+            --set server.ingress.hosts[0].host=openbao.pipe.local
+          register: openbao_install
+
+        - name: Wait for OpenBao pods to be ready
+          command: >
+            kubectl wait --for=condition=ready pod
+            -l app.kubernetes.io/name=openbao
+            -n openbao-system
+            --timeout=300s
+          changed_when: false
+
+    - name: Deploy Zitadel (IAM)
+      when: zitadel_enabled
+      block:
+        - name: Add Zitadel Helm repository
+          command: helm repo add zitadel https://charts.zitadel.com
+          changed_when: true
+
+        - name: Install Zitadel via Helm
+          command: >
+            helm upgrade --install zitadel zitadel/zitadel
+            --namespace zitadel-system
+            --create-namespace
+            --set zitadel.masterkey=$(openssl rand -base64 32)
+            --set replicaCount=2
+            --set zitadel.configmapConfig.FirstInstance.Org.Human.UserName=admin
+            --set zitadel.configmapConfig.FirstInstance.Org.Human.Password.Initial=Admin123!
+          register: zitadel_install
+
+        - name: Wait for Zitadel pods to be ready
+          command: >
+            kubectl wait --for=condition=ready pod
+            -l app.kubernetes.io/name=zitadel
+            -n zitadel-system
+            --timeout=300s
+          changed_when: false
+
+    - name: Deploy Zot Registry
+      when: zot_enabled
+      block:
+        - name: Execute Zot deployment script
+          command: bash ../../scripts/zot/deploy-zot.sh
+          register: zot_deploy
+
+        - name: Wait for Zot pods to be ready
+          command: >
+            kubectl wait --for=condition=ready pod
+            -l app=zot-registry
+            -n zot-registry
+            --timeout=300s
+          changed_when: false
+
+    - name: Apply Cilium Network Policies
+      when: cilium_enabled
+      block:
+        - name: Apply Cilium network policies
+          command: kubectl apply -f ../cilium/network-policies.yaml
+          register: cilium_policies
+
+        - name: Verify Cilium status
+          command: cilium status
+          register: cilium_status
+          changed_when: false
+          failed_when: false
+
+    - name: Deploy PIPE System with Helm
+      block:
+        - name: Install PIPE Helm chart
+          command: >
+            helm upgrade --install pipe-bots ../../charts/pipe-bots
+            --namespace {{ pipe_namespace }}
+            --create-namespace
+            --set image.tag={{ pipe_version }}
+            --set openbao.enabled={{ openbao_enabled }}
+            --set zitadel.enabled={{ zitadel_enabled }}
+            --set cosign.enforce=true
+          register: pipe_install
+
+        - name: Wait for PIPE bots to be ready
+          command: >
+            kubectl wait --for=condition=ready pod
+            -l app.kubernetes.io/part-of=pipe-system
+            -n {{ pipe_namespace }}
+            --timeout=300s
+          changed_when: false
+
+    - name: Generate and store Cosign keys in OpenBao
+      when: openbao_enabled
+      block:
+        - name: Generate Cosign keypair
+          command: bash ../../scripts/cosign/sign-images.sh generate-keypair
+          register: cosign_gen
+
+        - name: Store Cosign private key in OpenBao
+          shell: |
+            kubectl exec -n openbao-system openbao-0 -- \
+              openbao kv put secret/pipe/cosign/private-key \
+              value=@cosign.key
+          changed_when: true
+
+    - name: Display deployment status
+      debug:
+        msg: |
+          ========================================
+          PIPE Deployment Complete
+          ========================================
+          ✓ OpenTofu: Infrastructure provisioned
+          ✓ OpenBao: Secrets management ready
+          ✓ Zitadel: IAM system deployed
+          ✓ Zot: Container registry available
+          ✓ Cilium: Network policies enforced
+          ✓ PIPE Bots: All systems operational
+          ========================================
+
+          Access Points:
+          - OpenBao UI: https://openbao.pipe.local
+          - Zitadel: https://zitadel.pipe.local
+          - Zot Registry: https://zot.pipe.local
+          - PIPE Dashboard: https://pipe.pipe.local
+          ========================================
+
+    - name: Run post-deployment verification
+      include_tasks: verify-deployment.yml

@@ -1,0 +1,53 @@
+---
+# Verification tasks for PIPE deployment
+
+- name: Verify OpenBao health
+  command: >
+    kubectl exec -n openbao-system openbao-0 --
+    openbao status
+  register: openbao_health
+  changed_when: false
+  failed_when: false
+
+- name: Verify Zitadel health
+  uri:
+    url: https://zitadel.pipe.local/debug/healthz
+    method: GET
+    validate_certs: false
+  register: zitadel_health
+  failed_when: false
+
+- name: Verify Zot health
+  uri:
+    url: https://zot.pipe.local/v2/
+    method: GET
+    validate_certs: false
+  register: zot_health
+  failed_when: false
+
+- name: Verify Cilium connectivity
+  command: cilium connectivity test --test-concurrency=1
+  register: cilium_connectivity
+  changed_when: false
+  failed_when: false
+
+- name: Check all PIPE pods status
+  command: kubectl get pods -n pipe-bots -o wide
+  register: pipe_pods
+  changed_when: false
+
+- name: Display verification results
+  debug:
+    msg: |
+      ========================================
+      Deployment Verification Results
+      ========================================
+      OpenBao: {{ 'HEALTHY' if openbao_health.rc == 0 else 'UNHEALTHY' }}
+      Zitadel: {{ 'HEALTHY' if zitadel_health.status == 200 else 'UNHEALTHY' }}
+      Zot: {{ 'HEALTHY' if zot_health.status == 200 else 'UNHEALTHY' }}
+      Cilium: {{ 'HEALTHY' if cilium_connectivity.rc == 0 else 'CHECK REQUIRED' }}
+      ========================================
+
+      PIPE Pods:
+      {{ pipe_pods.stdout }}
+      ========================================
