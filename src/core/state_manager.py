@@ -156,5 +156,18 @@ class StateManager:
         """
         async with self.lock:
             self.state[bot_name] = {}
-            await self.save_state(bot_name)
-            self.logger.info(f"Cleared state for bot: {bot_name}")
+            # Save directly without acquiring lock again (already have it)
+            state_file = self.state_dir / f"{bot_name}.json"
+            try:
+                save_data = {
+                    "bot_name": bot_name,
+                    "last_updated": datetime.now().isoformat(),
+                    "data": self.state[bot_name],
+                }
+                with open(state_file, "w") as f:
+                    json.dump(save_data, f, indent=2)
+                self.logger.info(f"Cleared state for bot: {bot_name}")
+            except Exception as e:
+                self.logger.error(
+                    f"Failed to save cleared state for {bot_name}: {str(e)}"
+                )

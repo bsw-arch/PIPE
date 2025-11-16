@@ -29,7 +29,22 @@ class GovernanceManager:
         self.compliance_tracker = ComplianceTracker()
         self.review_pipeline = ReviewPipeline()
 
+        # Ensure PIPE hub is registered
+        self._initialize_pipe_hub()
+
         self.logger.info("Governance manager initialized")
+
+    def _initialize_pipe_hub(self):
+        """Initialize PIPE as the central hub."""
+        self.domain_registry.register_domain(
+            "PIPE",
+            capabilities=[
+                "cross_domain_routing",
+                "governance_management",
+                "quality_monitoring",
+                "review_orchestration",
+            ],
+        )
 
     async def register_domain(
         self, domain_code: str, capabilities: list = None
@@ -54,6 +69,20 @@ class GovernanceManager:
         compliance_id = self.compliance_tracker.create_compliance_record(
             entity_id=domain_code, entity_type="domain", domain=domain_code
         )
+
+        # Auto-connect to PIPE hub (except for PIPE itself)
+        if domain_code != "PIPE":
+            try:
+                hub_integration_id = self.domain_registry.register_integration(
+                    domain_code, "PIPE", "hub"
+                )
+                self.logger.info(
+                    f"Domain {domain_code} auto-connected to PIPE hub: {hub_integration_id}"
+                )
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to auto-connect {domain_code} to PIPE: {str(e)}"
+                )
 
         self.logger.info(f"Domain {domain_code} registered with governance")
 

@@ -132,7 +132,7 @@ class DataProcessorBot(BotBase):
         """
         self.logger.info(f"Worker {worker_id} started")
 
-        while self.status.value == "running":
+        while self.status.value not in ["stopped", "error"]:
             try:
                 # Get data from queue with timeout
                 try:
