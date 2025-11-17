@@ -158,33 +158,92 @@ BNI, BNP, AXIS, IV, EcoX, THRIVE, DC, BU, PIPE
 
 ---
 
-## 🏗️ Modern Open-Source Infrastructure
+## 🏗️ Cloud-Native Infrastructure Stack
 
-PIPE uses **100% open-source** infrastructure stack:
+PIPE uses a **27-technology** open-source stack aligned with **EuroStack** (European digital sovereignty) principles:
 
-### ✅ Technologies We Use
+### 📊 Stack Overview
 
-- **OpenTofu** - Infrastructure as Code (Terraform alternative)
-- **Ansible** - Configuration management and automation
-- **Helm** - Kubernetes package management
-- **OpenBao** - Secrets management (Vault alternative)
-- **Zitadel** - Identity and access management
-- **Zot** - OCI-native container registry
+**27 Technologies** across 7 capability layers:
+- 🔨 Development (3): OpenSpec, PR-QUEST, Cognee
+- 📦 Container Tooling (4): Podman, Buildah, Skopeo, Cosign
+- 🔐 Security (5): OpenBao, Zitadel, Trivy, Syft, Grype
+- 📡 Networking (2): Cilium, Zot
+- 📊 Observability (4): Prometheus, Grafana, Loki, Tempo
+- 🚀 GitOps (3): ArgoCD, OpenTofu, Ansible
+- 🛡️ Policy (3): OPA, Kyverno, Helm
+- 💾 Storage (2): Longhorn, MinIO
+- 🔄 Backup (1): Velero
+
+**CNCF Projects: 8** (6 graduated, 1 incubating, 1 sandbox)
+
+### ✅ By Capability
+
+#### Development & AI
+- **OpenSpec** - Spec-driven development methodology (Fission-AI)
+- **PR-QUEST** - LLM-powered PR review with gamification (Fission-AI)
+- **Cognee** - AI memory and knowledge graph
+
+#### Container Tooling (Docker-Free!)
+- **Podman** - Daemonless container runtime (replaces Docker)
+- **Buildah** - OCI image building without daemon
+- **Skopeo** - Container image operations (copy, inspect, sign)
 - **Cosign** - Container image signing and verification
-- **Cilium** - eBPF-based Kubernetes networking
-- **Cognee** - AI memory and knowledge graph for governance
-- **PR-QUEST** - Interactive PR review with LLM-powered analysis and gamification
-- **OpenSpec** - Spec-driven development methodology
+
+#### Security & Identity
+- **OpenBao** - Secrets management (Vault fork, NO HASHICORP!)
+- **Zitadel** - Identity and access management (OAuth2/OIDC)
+- **Trivy** - Comprehensive vulnerability scanner
+- **Syft** - SBOM (Software Bill of Materials) generation
+- **Grype** - Alternative vulnerability scanner
+
+#### Observability (LGTM Stack)
+- **Prometheus** - Metrics collection and alerting (CNCF Graduated)
+- **Grafana** - Visualization and dashboards
+- **Loki** - Log aggregation (like Prometheus for logs)
+- **Tempo** - Distributed tracing (OpenTelemetry)
+
+#### GitOps & Automation
+- **ArgoCD** - Declarative GitOps continuous delivery (CNCF Graduated)
+- **OpenTofu** - Infrastructure as Code (Terraform fork, NO HASHICORP!)
+- **Ansible** - Configuration management
+
+#### Policy & Compliance
+- **OPA** - General-purpose policy engine (CNCF Graduated)
+- **Kyverno** - Kubernetes-native policy management (CNCF Incubating)
+- **Helm** - Kubernetes package manager (CNCF Graduated)
+
+#### Networking & Registry
+- **Cilium** - eBPF-based CNI with network policies (CNCF Graduated)
+- **Zot** - OCI-native container registry
+
+#### Storage
+- **Longhorn** - Distributed block storage (CNCF Sandbox)
+- **MinIO** - S3-compatible object storage
+
+#### Backup & DR
+- **Velero** - Kubernetes backup and restore (CNCF Graduated)
 
 ### ❌ Forbidden Technologies
 
-The following HashiCorp products are **NOT ALLOWED**:
+**NO US Tech Giants / Proprietary Licensing:**
 
 - ❌ **HashiCorp Vault** → Use **OpenBao** instead
 - ❌ **HashiCorp Consul** → Use **Kubernetes native** service discovery
 - ❌ **HashiCorp Terraform** → Use **OpenTofu** instead
+- ❌ **Docker Desktop** → Use **Podman/Buildah** instead
+- ❌ **Elastic Stack** → Use **Loki** instead (lighter, open-source)
 
-**See [INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) for complete infrastructure guide**
+### 🇪🇺 EuroStack Alignment
+
+PIPE aligns with **EuroStack** (European digital sovereignty initiative):
+- ✅ **100% Open-Source** - No proprietary licenses
+- ✅ **Self-Hosted** - All components run in our infrastructure
+- ✅ **Data Sovereignty** - All data stays in Europe
+- ✅ **Green Computing** - Efficient eBPF, lightweight components
+- ✅ **Community-Driven** - Contributing back to upstream projects
+
+**📖 Complete Stack Documentation**: See [CLOUD_NATIVE_STACK.md](docs/CLOUD_NATIVE_STACK.md)
 
 ---
 
