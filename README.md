@@ -15,11 +15,13 @@ The PIPE Domain Bot System is a comprehensive, production-ready bot automation f
 - **🤖 Four Bot Types**: Pipeline automation, data processing, monitoring, and integration hub bots
 - **🏛️ Enterprise Governance**: Full AgenticAI governance architecture with compliance tracking
 - **🔌 Cross-Domain Integration**: Hub-and-spoke integration across 9 domains
+- **🧠 AI Memory**: Cognee integration for governance intelligence and pattern learning
 - **📡 Event-Driven Architecture**: Loosely coupled bot communication via event bus
 - **💾 State Management**: Persistent state storage with automatic recovery
 - **📊 Metrics & Monitoring**: Built-in metrics collection and health checking
 - **✅ Compliance Tracking**: Automated governance compliance monitoring
 - **🔍 Review Pipeline**: Structured review process for cross-domain integrations
+- **📋 Spec-Driven Development**: OpenSpec specifications guide all implementation
 - **🔄 Async/Await**: Fully asynchronous design for high performance
 - **🐳 Docker Ready**: Complete containerization support
 - **🧪 Well Tested**: Comprehensive unit and integration tests
@@ -156,30 +158,92 @@ BNI, BNP, AXIS, IV, EcoX, THRIVE, DC, BU, PIPE
 
 ---
 
-## 🏗️ Modern Open-Source Infrastructure
+## 🏗️ Cloud-Native Infrastructure Stack
 
-PIPE uses **100% open-source** infrastructure stack:
+PIPE uses a **27-technology** open-source stack aligned with **EuroStack** (European digital sovereignty) principles:
 
-### ✅ Technologies We Use
+### 📊 Stack Overview
 
-- **OpenTofu** - Infrastructure as Code (Terraform alternative)
-- **Ansible** - Configuration management and automation
-- **Helm** - Kubernetes package management
-- **OpenBao** - Secrets management (Vault alternative)
-- **Zitadel** - Identity and access management
-- **Zot** - OCI-native container registry
+**27 Technologies** across 7 capability layers:
+- 🔨 Development (3): OpenSpec, PR-QUEST, Cognee
+- 📦 Container Tooling (4): Podman, Buildah, Skopeo, Cosign
+- 🔐 Security (5): OpenBao, Zitadel, Trivy, Syft, Grype
+- 📡 Networking (2): Cilium, Zot
+- 📊 Observability (4): Prometheus, Grafana, Loki, Tempo
+- 🚀 GitOps (3): ArgoCD, OpenTofu, Ansible
+- 🛡️ Policy (3): OPA, Kyverno, Helm
+- 💾 Storage (2): Longhorn, MinIO
+- 🔄 Backup (1): Velero
+
+**CNCF Projects: 8** (6 graduated, 1 incubating, 1 sandbox)
+
+### ✅ By Capability
+
+#### Development & AI
+- **OpenSpec** - Spec-driven development methodology (Fission-AI)
+- **PR-QUEST** - LLM-powered PR review with gamification (Fission-AI)
+- **Cognee** - AI memory and knowledge graph
+
+#### Container Tooling (Docker-Free!)
+- **Podman** - Daemonless container runtime (replaces Docker)
+- **Buildah** - OCI image building without daemon
+- **Skopeo** - Container image operations (copy, inspect, sign)
 - **Cosign** - Container image signing and verification
-- **Cilium** - eBPF-based Kubernetes networking
+
+#### Security & Identity
+- **OpenBao** - Secrets management (Vault fork, NO HASHICORP!)
+- **Zitadel** - Identity and access management (OAuth2/OIDC)
+- **Trivy** - Comprehensive vulnerability scanner
+- **Syft** - SBOM (Software Bill of Materials) generation
+- **Grype** - Alternative vulnerability scanner
+
+#### Observability (LGTM Stack)
+- **Prometheus** - Metrics collection and alerting (CNCF Graduated)
+- **Grafana** - Visualization and dashboards
+- **Loki** - Log aggregation (like Prometheus for logs)
+- **Tempo** - Distributed tracing (OpenTelemetry)
+
+#### GitOps & Automation
+- **ArgoCD** - Declarative GitOps continuous delivery (CNCF Graduated)
+- **OpenTofu** - Infrastructure as Code (Terraform fork, NO HASHICORP!)
+- **Ansible** - Configuration management
+
+#### Policy & Compliance
+- **OPA** - General-purpose policy engine (CNCF Graduated)
+- **Kyverno** - Kubernetes-native policy management (CNCF Incubating)
+- **Helm** - Kubernetes package manager (CNCF Graduated)
+
+#### Networking & Registry
+- **Cilium** - eBPF-based CNI with network policies (CNCF Graduated)
+- **Zot** - OCI-native container registry
+
+#### Storage
+- **Longhorn** - Distributed block storage (CNCF Sandbox)
+- **MinIO** - S3-compatible object storage
+
+#### Backup & DR
+- **Velero** - Kubernetes backup and restore (CNCF Graduated)
 
 ### ❌ Forbidden Technologies
 
-The following HashiCorp products are **NOT ALLOWED**:
+**NO US Tech Giants / Proprietary Licensing:**
 
 - ❌ **HashiCorp Vault** → Use **OpenBao** instead
 - ❌ **HashiCorp Consul** → Use **Kubernetes native** service discovery
 - ❌ **HashiCorp Terraform** → Use **OpenTofu** instead
+- ❌ **Docker Desktop** → Use **Podman/Buildah** instead
+- ❌ **Elastic Stack** → Use **Loki** instead (lighter, open-source)
 
-**See [INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) for complete infrastructure guide**
+### 🇪🇺 EuroStack Alignment
+
+PIPE aligns with **EuroStack** (European digital sovereignty initiative):
+- ✅ **100% Open-Source** - No proprietary licenses
+- ✅ **Self-Hosted** - All components run in our infrastructure
+- ✅ **Data Sovereignty** - All data stays in Europe
+- ✅ **Green Computing** - Efficient eBPF, lightweight components
+- ✅ **Community-Driven** - Contributing back to upstream projects
+
+**📖 Complete Stack Documentation**: See [CLOUD_NATIVE_STACK.md](docs/CLOUD_NATIVE_STACK.md)
 
 ---
 
@@ -343,10 +407,22 @@ PIPE/
 │   ├── unit/
 │   └── integration/
 ├── config/               # Configuration files
+├── openspec/             # Spec-driven development (NEW)
+│   ├── project.md        # Project context for AI
+│   ├── specs/            # Behavioral specifications
+│   │   ├── bots/spec.md
+│   │   ├── governance/spec.md
+│   │   └── integrations/spec.md
+│   └── changes/          # Change proposals
+│       └── example-add-memify-support/
 ├── docs/                 # Documentation
 │   ├── ARCHITECTURE.md
 │   ├── GOVERNANCE.md
-│   └── INFRASTRUCTURE.md  # NEW
+│   ├── INFRASTRUCTURE.md
+│   ├── COGNEE_INTEGRATION.md   # NEW
+│   └── OPENSPEC_GUIDE.md       # NEW
+├── examples/             # Example implementations (NEW)
+│   └── cognee/          # Cognee AI examples
 ├── Dockerfile
 ├── docker-compose.yml
 └── requirements.txt
@@ -451,6 +527,245 @@ docker-compose down
 - Configure persistent volumes for state
 - Implement health check endpoints
 - Set up Prometheus/Grafana monitoring
+
+---
+
+## 📋 Spec-Driven Development with OpenSpec
+
+PIPE uses **OpenSpec** for spec-driven development, providing:
+
+- **Living Specifications**: Gherkin-style requirements that guide implementation
+- **Change Proposals**: Structured process for proposing features
+- **AI Context**: Comprehensive project context for AI assistants
+- **Test-Driven Development**: Specs drive both code and tests
+
+### Quick Start
+
+**1. Read existing specifications:**
+```bash
+# Bot system specifications
+cat openspec/specs/bots/spec.md
+
+# Governance workflow specifications
+cat openspec/specs/governance/spec.md
+
+# Infrastructure integration specifications
+cat openspec/specs/integrations/spec.md
+```
+
+**2. Propose a change:**
+```bash
+# See example proposal
+cat openspec/changes/example-add-memify-support/proposal.md
+```
+
+**3. Implement from spec:**
+```python
+# Code references spec line numbers
+async def authenticate_kubernetes(self, jwt_path: str = None) -> bool:
+    """
+    Authenticate to OpenBao using Kubernetes service account.
+
+    Implements: openspec/specs/integrations/spec.md:11-15
+    """
+    # Implementation follows spec exactly
+    ...
+```
+
+### Specification Example
+
+```gherkin
+### Requirement: OpenBao Secrets Management
+The system SHALL use OpenBao for all secrets management.
+
+#### Scenario: Kubernetes authentication
+- GIVEN a bot runs in Kubernetes
+- WHEN it needs to access secrets
+- THEN it SHALL authenticate using service account JWT
+- AND receive a time-limited token
+```
+
+**📖 Full Guide:** See [OPENSPEC_GUIDE.md](docs/OPENSPEC_GUIDE.md)
+
+---
+
+## 🧠 AI Memory with Cognee
+
+PIPE integrates **Cognee** for governance intelligence:
+
+- **Semantic Search**: Find similar integrations, compliance issues, and review decisions
+- **Knowledge Graph**: Navigate relationships between domains, integrations, and reviews
+- **Pattern Learning**: Learn from historical decisions to suggest optimal paths
+- **Derived Facts**: Generate insights from governance data (via Memify)
+
+### Three-Store Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│         Cognee AI Memory                     │
+├─────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌──────────┐  ┌────────┐ │
+│  │ Relational  │  │  Vector  │  │ Graph  │ │
+│  │   Store     │  │  Store   │  │ Store  │ │
+│  │             │  │          │  │        │ │
+│  │ Provenance  │  │Embeddings│  │ Edges  │ │
+│  │ Versioning  │  │ Semantic │  │Relations│ │
+│  └─────────────┘  └──────────┘  └────────┘ │
+└─────────────────────────────────────────────┘
+```
+
+### Quick Example
+
+```python
+from src.integrations.cognee_client import get_cognee_client
+from src.governance.datapoints import IntegrationDataPoint
+
+# Add governance data
+client = await get_cognee_client()
+integration = IntegrationDataPoint(
+    integration_id="INT-001",
+    source_domain="BNI",
+    target_domain="PIPE",
+    integration_type="hub",
+    description="Hub connection for blockchain data flow",
+    status="connected"
+)
+
+await client.add_datapoints([integration])
+await client.cognify_governance_data()
+
+# Semantic search
+results = await client.search_integrations(
+    "hub integrations for blockchain domains",
+    limit=5
+)
+
+# Suggest integration path
+suggestion = await client.suggest_integration_path("EcoX", "PIPE")
+print(f"Confidence: {suggestion['confidence']:.2f}")
+```
+
+### DataPoint Types
+
+PIPE provides 8 custom DataPoint types:
+
+1. **DomainDataPoint** - Ecosystem domains (BNI, BNP, AXIS, etc.)
+2. **IntegrationDataPoint** - Cross-domain integrations
+3. **ComplianceRecordDataPoint** - Compliance tracking
+4. **ReviewDecisionDataPoint** - Governance review decisions
+5. **IntegrationPatternDataPoint** - Learned integration patterns
+6. **DomainCapabilityDataPoint** - Domain-specific capabilities
+7. **GovernancePolicyDataPoint** - Governance policies
+8. **PRReviewDataPoint** - PR-QUEST code reviews (NEW)
+
+**📖 Full Documentation:** See [COGNEE_INTEGRATION.md](docs/COGNEE_INTEGRATION.md)
+
+**🔬 Examples:** See [examples/cognee/governance_memory.py](examples/cognee/governance_memory.py)
+
+---
+
+## 🔍 Automated PR Review with PR-QUEST
+
+PIPE integrates **PR-QUEST** for LLM-powered code review of integration PRs:
+
+- **Smart Clustering**: LLM groups related code changes into logical clusters
+- **Risk Detection**: Automatic identification of security issues, breaking changes, and anti-patterns
+- **Quality Gates**: Block problematic PRs before merge
+- **Gamification**: XP system encourages thorough reviews
+- **Pattern Learning**: Store reviews in Cognee to learn from history
+
+### PR Review Workflow
+
+```
+┌──────────────────────────────────────────────────┐
+│       Integration PR Review Workflow              │
+├──────────────────────────────────────────────────┤
+│                                                   │
+│  1. Developer creates PR                          │
+│  2. PR Review Bot detects new PR                  │
+│  3. PR-QUEST analyzes code changes                │
+│     • LLM clusters related changes                │
+│     • Detects risks (security, breaking changes)  │
+│     • Generates fix suggestions                   │
+│  4. Bot determines decision                       │
+│     • APPROVE → Auto-merge (clean PRs)            │
+│     • REJECT → Block merge (critical risks)       │
+│     • NEEDS_REVIEW → Assign to human             │
+│  5. Store review in Cognee                        │
+│     • Learn from patterns                         │
+│     • Improve future reviews                      │
+│                                                   │
+└──────────────────────────────────────────────────┘
+```
+
+### Quick Example
+
+```python
+from src.integrations.pr_quest_client import get_pr_quest_client
+from src.integrations.pr_quest_models import determine_decision_from_analysis
+
+# Initialize PR-QUEST client
+client = await get_pr_quest_client("http://localhost:3000")
+
+# Analyze a GitHub PR
+result = await client.analyze_pr(
+    "https://github.com/bsw-arch/PIPE/pull/123",
+    include_llm_analysis=True  # Use LLM for smart clustering
+)
+
+# Check results
+print(f"Clusters: {len(result.clusters)}")
+print(f"Risks: {len(result.risks)} ({result.overall_risk_level})")
+print(f"XP Awarded: {result.xp_awarded}")
+
+# Determine decision
+decision = determine_decision_from_analysis(result)
+if decision.value == "APPROVE":
+    print("✅ Auto-approved - No risks detected")
+elif decision.value == "REJECT":
+    print("❌ Auto-rejected - Critical risks found")
+else:
+    print("⏸️  Flagged for human review")
+
+# Export as markdown for documentation
+markdown = await client.export_markdown(result.analysis_id)
+```
+
+### Risk Detection Categories
+
+PR-QUEST detects:
+
+1. **SECURITY** - SQL injection, XSS, insecure dependencies
+2. **BREAKING_CHANGE** - API changes that break compatibility
+3. **ANTI_PATTERN** - Code smells and architectural issues
+4. **PERFORMANCE** - Inefficient algorithms, memory leaks
+5. **COMPLIANCE** - Policy violations, missing documentation
+6. **MAINTAINABILITY** - High complexity, poor readability
+7. **TESTING** - Insufficient test coverage
+
+### Integration with Cognee
+
+All PR reviews are stored in Cognee (8th DataPoint type: `PRReviewDataPoint`):
+
+```python
+# PR reviews are automatically stored after analysis
+# Search for similar past issues
+similar = await cognee_client.search_integrations(
+    "PR reviews with SQL injection risks",
+    limit=5
+)
+
+# Learn from historical patterns
+suggestion = await cognee_client.suggest_integration_path(
+    "BNI", "PIPE"
+)  # Includes insights from past PR reviews
+```
+
+**📖 Full Documentation:** See [PR_QUEST_INTEGRATION.md](docs/PR_QUEST_INTEGRATION.md) *(coming soon)*
+
+**🔬 Examples:** See [examples/pr_quest/review_integration_pr.py](examples/pr_quest/review_integration_pr.py)
+
+**🎮 GitHub**: [Fission-AI/PR-QUEST](https://github.com/Fission-AI/PR-QUEST)
 
 ---
 
