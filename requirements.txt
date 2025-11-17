@@ -30,3 +30,6 @@ lancedb>=0.5.0  # Vector store backend
 networkx>=3.0  # Graph store backend (lightweight)
 # Optional: neo4j>=5.0.0  # Production graph database
 # Optional: qdrant-client>=1.7.0  # Production vector database
+
+# PR Review (PR-QUEST Integration)
+PyGithub>=2.0.0  # GitHub API client

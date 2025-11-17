@@ -173,6 +173,7 @@ PIPE uses **100% open-source** infrastructure stack:
 - **Cosign** - Container image signing and verification
 - **Cilium** - eBPF-based Kubernetes networking
 - **Cognee** - AI memory and knowledge graph for governance
+- **PR-QUEST** - Interactive PR review with LLM-powered analysis and gamification
 - **OpenSpec** - Spec-driven development methodology
 
 ### ❌ Forbidden Technologies
@@ -587,7 +588,7 @@ print(f"Confidence: {suggestion['confidence']:.2f}")
 
 ### DataPoint Types
 
-PIPE provides 7 custom DataPoint types:
+PIPE provides 8 custom DataPoint types:
 
 1. **DomainDataPoint** - Ecosystem domains (BNI, BNP, AXIS, etc.)
 2. **IntegrationDataPoint** - Cross-domain integrations
@@ -596,10 +597,116 @@ PIPE provides 7 custom DataPoint types:
 5. **IntegrationPatternDataPoint** - Learned integration patterns
 6. **DomainCapabilityDataPoint** - Domain-specific capabilities
 7. **GovernancePolicyDataPoint** - Governance policies
+8. **PRReviewDataPoint** - PR-QUEST code reviews (NEW)
 
 **📖 Full Documentation:** See [COGNEE_INTEGRATION.md](docs/COGNEE_INTEGRATION.md)
 
 **🔬 Examples:** See [examples/cognee/governance_memory.py](examples/cognee/governance_memory.py)
+
+---
+
+## 🔍 Automated PR Review with PR-QUEST
+
+PIPE integrates **PR-QUEST** for LLM-powered code review of integration PRs:
+
+- **Smart Clustering**: LLM groups related code changes into logical clusters
+- **Risk Detection**: Automatic identification of security issues, breaking changes, and anti-patterns
+- **Quality Gates**: Block problematic PRs before merge
+- **Gamification**: XP system encourages thorough reviews
+- **Pattern Learning**: Store reviews in Cognee to learn from history
+
+### PR Review Workflow
+
+```
+┌──────────────────────────────────────────────────┐
+│       Integration PR Review Workflow              │
+├──────────────────────────────────────────────────┤
+│                                                   │
+│  1. Developer creates PR                          │
+│  2. PR Review Bot detects new PR                  │
+│  3. PR-QUEST analyzes code changes                │
+│     • LLM clusters related changes                │
+│     • Detects risks (security, breaking changes)  │
+│     • Generates fix suggestions                   │
+│  4. Bot determines decision                       │
+│     • APPROVE → Auto-merge (clean PRs)            │
+│     • REJECT → Block merge (critical risks)       │
+│     • NEEDS_REVIEW → Assign to human             │
+│  5. Store review in Cognee                        │
+│     • Learn from patterns                         │
+│     • Improve future reviews                      │
+│                                                   │
+└──────────────────────────────────────────────────┘
+```
+
+### Quick Example
+
+```python
+from src.integrations.pr_quest_client import get_pr_quest_client
+from src.integrations.pr_quest_models import determine_decision_from_analysis
+
+# Initialize PR-QUEST client
+client = await get_pr_quest_client("http://localhost:3000")
+
+# Analyze a GitHub PR
+result = await client.analyze_pr(
+    "https://github.com/bsw-arch/PIPE/pull/123",
+    include_llm_analysis=True  # Use LLM for smart clustering
+)
+
+# Check results
+print(f"Clusters: {len(result.clusters)}")
+print(f"Risks: {len(result.risks)} ({result.overall_risk_level})")
+print(f"XP Awarded: {result.xp_awarded}")
+
+# Determine decision
+decision = determine_decision_from_analysis(result)
+if decision.value == "APPROVE":
+    print("✅ Auto-approved - No risks detected")
+elif decision.value == "REJECT":
+    print("❌ Auto-rejected - Critical risks found")
+else:
+    print("⏸️  Flagged for human review")
+
+# Export as markdown for documentation
+markdown = await client.export_markdown(result.analysis_id)
+```
+
+### Risk Detection Categories
+
+PR-QUEST detects:
+
+1. **SECURITY** - SQL injection, XSS, insecure dependencies
+2. **BREAKING_CHANGE** - API changes that break compatibility
+3. **ANTI_PATTERN** - Code smells and architectural issues
+4. **PERFORMANCE** - Inefficient algorithms, memory leaks
+5. **COMPLIANCE** - Policy violations, missing documentation
+6. **MAINTAINABILITY** - High complexity, poor readability
+7. **TESTING** - Insufficient test coverage
+
+### Integration with Cognee
+
+All PR reviews are stored in Cognee (8th DataPoint type: `PRReviewDataPoint`):
+
+```python
+# PR reviews are automatically stored after analysis
+# Search for similar past issues
+similar = await cognee_client.search_integrations(
+    "PR reviews with SQL injection risks",
+    limit=5
+)
+
+# Learn from historical patterns
+suggestion = await cognee_client.suggest_integration_path(
+    "BNI", "PIPE"
+)  # Includes insights from past PR reviews
+```
+
+**📖 Full Documentation:** See [PR_QUEST_INTEGRATION.md](docs/PR_QUEST_INTEGRATION.md) *(coming soon)*
+
+**🔬 Examples:** See [examples/pr_quest/review_integration_pr.py](examples/pr_quest/review_integration_pr.py)
+
+**🎮 GitHub**: [Fission-AI/PR-QUEST](https://github.com/Fission-AI/PR-QUEST)
 
 ---
 

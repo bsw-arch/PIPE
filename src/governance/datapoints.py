@@ -242,6 +242,56 @@ class GovernancePolicyDataPoint(DataPoint):
     metadata: dict = {"index_fields": ["policy_text", "requirements"]}
 
 
+class PRReviewDataPoint(DataPoint):
+    """
+    Represents a PR-QUEST code review for governance tracking.
+
+    Captures automated and human PR reviews with LLM-powered analysis,
+    risk detection, and gamification metrics. Enables learning from
+    code review patterns over time.
+
+    Indexed fields:
+    - risks: Semantic search for similar PR issues
+    - suggestions: Find similar fix recommendations
+    - decision: Search by review outcome
+    """
+
+    # PR Metadata
+    pr_url: str  # Full GitHub PR URL
+    pr_number: int  # PR number
+    repository: str  # owner/repo
+    analysis_id: str  # PR-QUEST analysis ID
+
+    # PR-QUEST Analysis Results
+    clusters: List[dict]  # Grouped changes from LLM clustering
+    risks: List[str]  # Detected issues (simplified for Cognee indexing)
+    risk_level: str  # NONE, LOW, MODERATE, CRITICAL
+    suggestions: List[str]  # LLM recommendations
+    xp_awarded: int  # Gamification score
+
+    # Review Decision
+    decision: str  # APPROVE, REJECT, NEEDS_REVIEW
+    reviewer: str  # Bot or human username
+    reviewed_at: int  # Unix timestamp
+    review_duration_seconds: int  # Time to complete review
+
+    # Integration Context
+    integration_id: Optional[str] = None  # Related integration request
+    source_domain: Optional[str] = None  # Source domain code
+    target_domain: Optional[str] = None  # Target domain code
+
+    # Override Information
+    human_override: bool = False  # Was bot decision overridden?
+    override_justification: Optional[str] = None  # Why override was needed
+
+    # LLM Information
+    llm_used: bool = True  # Whether LLM analysis was used
+    llm_model: Optional[str] = None  # Model used (e.g., gpt-4o-mini)
+
+    # Semantic search on risks, suggestions, and decision
+    metadata: dict = {"index_fields": ["risks", "suggestions", "decision"]}
+
+
 # Helper functions to create DataPoints from existing PIPE objects
 
 def domain_to_datapoint(domain_info: dict) -> DomainDataPoint:
@@ -334,4 +384,77 @@ def review_to_datapoint(review: dict) -> ReviewDecisionDataPoint:
         decision_timestamp=review.get("decision_timestamp"),
         integration=review.get("integration_id"),
         compliance_records=review.get("compliance_records", []),
+    )
+
+
+def pr_review_to_datapoint(
+    pr_analysis: "PRAnalysisResult",  # Forward reference to avoid circular import
+    decision: str,
+    reviewer: str,
+    review_duration: int,
+    integration_id: Optional[str] = None,
+    source_domain: Optional[str] = None,
+    target_domain: Optional[str] = None,
+    human_override: bool = False,
+    override_justification: Optional[str] = None,
+) -> PRReviewDataPoint:
+    """
+    Convert PR-QUEST analysis result to DataPoint.
+
+    Args:
+        pr_analysis: PRAnalysisResult from PR-QUEST
+        decision: Review decision (APPROVE, REJECT, NEEDS_REVIEW)
+        reviewer: Bot or human reviewer name
+        review_duration: Seconds taken for review
+        integration_id: Optional related integration ID
+        source_domain: Optional source domain code
+        target_domain: Optional target domain code
+        human_override: Whether decision was overridden
+        override_justification: Reason for override
+
+    Returns:
+        PRReviewDataPoint for storing in Cognee
+    """
+    # Convert pr_analysis.pr_url to string if it's a Pydantic HttpUrl
+    pr_url_str = str(pr_analysis.pr_url)
+
+    # Simplify clusters to dicts for Cognee storage
+    cluster_dicts = [
+        {
+            "id": cluster.id,
+            "description": cluster.description,
+            "files": cluster.files,
+            "line_count": cluster.line_count,
+            "category": cluster.category,
+        }
+        for cluster in pr_analysis.clusters
+    ]
+
+    # Simplify risks to strings for easier Cognee indexing
+    risk_strings = [
+        f"{risk.type.value}: {risk.description} (severity: {risk.severity.value})"
+        for risk in pr_analysis.risks
+    ]
+
+    return PRReviewDataPoint(
+        pr_url=pr_url_str,
+        pr_number=pr_analysis.pr_number,
+        repository=pr_analysis.repository,
+        analysis_id=pr_analysis.analysis_id,
+        clusters=cluster_dicts,
+        risks=risk_strings,
+        risk_level=pr_analysis.overall_risk_level.value,
+        suggestions=pr_analysis.suggestions,
+        xp_awarded=pr_analysis.xp_awarded,
+        decision=decision,
+        reviewer=reviewer,
+        reviewed_at=pr_analysis.analyzed_at,
+        review_duration_seconds=review_duration,
+        integration_id=integration_id,
+        source_domain=source_domain,
+        target_domain=target_domain,
+        human_override=human_override,
+        override_justification=override_justification,
+        llm_used=pr_analysis.llm_used,
+        llm_model=pr_analysis.llm_model,
     )
