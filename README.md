@@ -15,11 +15,13 @@ The PIPE Domain Bot System is a comprehensive, production-ready bot automation f
 - **🤖 Four Bot Types**: Pipeline automation, data processing, monitoring, and integration hub bots
 - **🏛️ Enterprise Governance**: Full AgenticAI governance architecture with compliance tracking
 - **🔌 Cross-Domain Integration**: Hub-and-spoke integration across 9 domains
+- **🧠 AI Memory**: Cognee integration for governance intelligence and pattern learning
 - **📡 Event-Driven Architecture**: Loosely coupled bot communication via event bus
 - **💾 State Management**: Persistent state storage with automatic recovery
 - **📊 Metrics & Monitoring**: Built-in metrics collection and health checking
 - **✅ Compliance Tracking**: Automated governance compliance monitoring
 - **🔍 Review Pipeline**: Structured review process for cross-domain integrations
+- **📋 Spec-Driven Development**: OpenSpec specifications guide all implementation
 - **🔄 Async/Await**: Fully asynchronous design for high performance
 - **🐳 Docker Ready**: Complete containerization support
 - **🧪 Well Tested**: Comprehensive unit and integration tests
@@ -170,6 +172,8 @@ PIPE uses **100% open-source** infrastructure stack:
 - **Zot** - OCI-native container registry
 - **Cosign** - Container image signing and verification
 - **Cilium** - eBPF-based Kubernetes networking
+- **Cognee** - AI memory and knowledge graph for governance
+- **OpenSpec** - Spec-driven development methodology
 
 ### ❌ Forbidden Technologies
 
@@ -343,10 +347,22 @@ PIPE/
 │   ├── unit/
 │   └── integration/
 ├── config/               # Configuration files
+├── openspec/             # Spec-driven development (NEW)
+│   ├── project.md        # Project context for AI
+│   ├── specs/            # Behavioral specifications
+│   │   ├── bots/spec.md
+│   │   ├── governance/spec.md
+│   │   └── integrations/spec.md
+│   └── changes/          # Change proposals
+│       └── example-add-memify-support/
 ├── docs/                 # Documentation
 │   ├── ARCHITECTURE.md
 │   ├── GOVERNANCE.md
-│   └── INFRASTRUCTURE.md  # NEW
+│   ├── INFRASTRUCTURE.md
+│   ├── COGNEE_INTEGRATION.md   # NEW
+│   └── OPENSPEC_GUIDE.md       # NEW
+├── examples/             # Example implementations (NEW)
+│   └── cognee/          # Cognee AI examples
 ├── Dockerfile
 ├── docker-compose.yml
 └── requirements.txt
@@ -451,6 +467,139 @@ docker-compose down
 - Configure persistent volumes for state
 - Implement health check endpoints
 - Set up Prometheus/Grafana monitoring
+
+---
+
+## 📋 Spec-Driven Development with OpenSpec
+
+PIPE uses **OpenSpec** for spec-driven development, providing:
+
+- **Living Specifications**: Gherkin-style requirements that guide implementation
+- **Change Proposals**: Structured process for proposing features
+- **AI Context**: Comprehensive project context for AI assistants
+- **Test-Driven Development**: Specs drive both code and tests
+
+### Quick Start
+
+**1. Read existing specifications:**
+```bash
+# Bot system specifications
+cat openspec/specs/bots/spec.md
+
+# Governance workflow specifications
+cat openspec/specs/governance/spec.md
+
+# Infrastructure integration specifications
+cat openspec/specs/integrations/spec.md
+```
+
+**2. Propose a change:**
+```bash
+# See example proposal
+cat openspec/changes/example-add-memify-support/proposal.md
+```
+
+**3. Implement from spec:**
+```python
+# Code references spec line numbers
+async def authenticate_kubernetes(self, jwt_path: str = None) -> bool:
+    """
+    Authenticate to OpenBao using Kubernetes service account.
+
+    Implements: openspec/specs/integrations/spec.md:11-15
+    """
+    # Implementation follows spec exactly
+    ...
+```
+
+### Specification Example
+
+```gherkin
+### Requirement: OpenBao Secrets Management
+The system SHALL use OpenBao for all secrets management.
+
+#### Scenario: Kubernetes authentication
+- GIVEN a bot runs in Kubernetes
+- WHEN it needs to access secrets
+- THEN it SHALL authenticate using service account JWT
+- AND receive a time-limited token
+```
+
+**📖 Full Guide:** See [OPENSPEC_GUIDE.md](docs/OPENSPEC_GUIDE.md)
+
+---
+
+## 🧠 AI Memory with Cognee
+
+PIPE integrates **Cognee** for governance intelligence:
+
+- **Semantic Search**: Find similar integrations, compliance issues, and review decisions
+- **Knowledge Graph**: Navigate relationships between domains, integrations, and reviews
+- **Pattern Learning**: Learn from historical decisions to suggest optimal paths
+- **Derived Facts**: Generate insights from governance data (via Memify)
+
+### Three-Store Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│         Cognee AI Memory                     │
+├─────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌──────────┐  ┌────────┐ │
+│  │ Relational  │  │  Vector  │  │ Graph  │ │
+│  │   Store     │  │  Store   │  │ Store  │ │
+│  │             │  │          │  │        │ │
+│  │ Provenance  │  │Embeddings│  │ Edges  │ │
+│  │ Versioning  │  │ Semantic │  │Relations│ │
+│  └─────────────┘  └──────────┘  └────────┘ │
+└─────────────────────────────────────────────┘
+```
+
+### Quick Example
+
+```python
+from src.integrations.cognee_client import get_cognee_client
+from src.governance.datapoints import IntegrationDataPoint
+
+# Add governance data
+client = await get_cognee_client()
+integration = IntegrationDataPoint(
+    integration_id="INT-001",
+    source_domain="BNI",
+    target_domain="PIPE",
+    integration_type="hub",
+    description="Hub connection for blockchain data flow",
+    status="connected"
+)
+
+await client.add_datapoints([integration])
+await client.cognify_governance_data()
+
+# Semantic search
+results = await client.search_integrations(
+    "hub integrations for blockchain domains",
+    limit=5
+)
+
+# Suggest integration path
+suggestion = await client.suggest_integration_path("EcoX", "PIPE")
+print(f"Confidence: {suggestion['confidence']:.2f}")
+```
+
+### DataPoint Types
+
+PIPE provides 7 custom DataPoint types:
+
+1. **DomainDataPoint** - Ecosystem domains (BNI, BNP, AXIS, etc.)
+2. **IntegrationDataPoint** - Cross-domain integrations
+3. **ComplianceRecordDataPoint** - Compliance tracking
+4. **ReviewDecisionDataPoint** - Governance review decisions
+5. **IntegrationPatternDataPoint** - Learned integration patterns
+6. **DomainCapabilityDataPoint** - Domain-specific capabilities
+7. **GovernancePolicyDataPoint** - Governance policies
+
+**📖 Full Documentation:** See [COGNEE_INTEGRATION.md](docs/COGNEE_INTEGRATION.md)
+
+**🔬 Examples:** See [examples/cognee/governance_memory.py](examples/cognee/governance_memory.py)
 
 ---
 
