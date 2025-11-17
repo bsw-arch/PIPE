@@ -82,6 +82,118 @@ The system SHALL use Cognee for governance intelligence.
   - Suggest optimal approach
   - Return confidence score
 
+### Requirement: PR-QUEST Interactive PR Review
+The system SHALL use PR-QUEST for automated code review of integration PRs.
+
+#### Scenario: PR analysis request
+- GIVEN a valid GitHub PR URL
+- WHEN requesting analysis
+- THEN the system SHALL:
+  - POST to PR-QUEST /api/analyze endpoint
+  - Include PR URL and configuration
+  - Receive analysis ID
+  - Poll for results until complete
+
+#### Scenario: LLM-powered clustering
+- GIVEN PR-QUEST is analyzing a PR
+- WHEN using LLM mode
+- THEN PR-QUEST SHALL:
+  - Fetch PR diff from GitHub
+  - Parse unified diff format
+  - Use LLM (GPT-4o-mini or configured model) to cluster related changes
+  - Group by logical functionality
+  - Return clustered changes with descriptions
+
+#### Scenario: Risk detection
+- GIVEN PR-QUEST completed clustering
+- WHEN analyzing for risks
+- THEN PR-QUEST SHALL:
+  - Apply heuristic rules for common issues
+  - Use LLM to identify security vulnerabilities
+  - Detect breaking changes
+  - Find integration anti-patterns
+  - Return risk level (NONE, LOW, MODERATE, CRITICAL)
+
+#### Scenario: Suggestion generation
+- GIVEN risks detected in PR
+- WHEN generating suggestions
+- THEN PR-QUEST SHALL:
+  - Use LLM to provide actionable fixes
+  - Include code examples where applicable
+  - Prioritize by impact
+  - Link to relevant documentation
+
+#### Scenario: Review step rendering
+- GIVEN PR analysis completed
+- WHEN human reviewer requests steps
+- THEN PR-QUEST SHALL:
+  - Return interactive review steps
+  - Show diff sections with react-diff-view
+  - Allow per-step notes
+  - Track review progress
+
+#### Scenario: Markdown export
+- GIVEN completed PR review (automated or human)
+- WHEN requesting export
+- THEN PR-QUEST SHALL:
+  - Generate markdown document
+  - Include all clusters and analysis
+  - Add reviewer notes
+  - Format for governance records
+
+#### Scenario: XP gamification
+- GIVEN a reviewer completes thorough review
+- WHEN awarding XP
+- THEN PR-QUEST SHALL:
+  - Calculate XP based on:
+    - PR complexity (lines changed)
+    - Review thoroughness (notes added)
+    - Time to complete
+  - Award XP to reviewer
+  - Update leaderboard
+  - Trigger achievements if applicable
+
+#### Scenario: Result caching
+- GIVEN a PR was analyzed previously
+- AND PR content hasn't changed
+- WHEN requesting re-analysis
+- THEN PR-QUEST SHALL:
+  - Check cache by PR SHA
+  - Return cached results if valid
+  - Skip LLM processing
+  - Save API costs and time
+
+### Requirement: PR-QUEST Deployment
+PR-QUEST SHALL be deployed as a service in the PIPE infrastructure.
+
+#### Scenario: Kubernetes deployment
+- GIVEN Kubernetes cluster is available
+- WHEN deploying PR-QUEST
+- THEN the system SHALL:
+  - Create pr-quest-service in pipe-system namespace
+  - Expose on port 3000
+  - Mount OPENAI_API_KEY from OpenBao
+  - Set resource limits (1Gi memory, 500m CPU)
+  - Configure health checks
+
+#### Scenario: Service discovery
+- GIVEN PR-QUEST service deployed
+- WHEN PR Review Bot needs to connect
+- THEN it SHALL:
+  - Resolve pr-quest-service.pipe-system.svc.cluster.local
+  - Connect over cluster network
+  - Use Cilium network policies for security
+
+#### Scenario: Fallback mode
+- GIVEN PR-QUEST service is unavailable
+- WHEN PR Review Bot attempts analysis
+- THEN it SHALL:
+  - Log service unavailable error
+  - Fall back to basic diff parsing (no LLM)
+  - Queue PR for retry
+  - Notify administrators
+  - Continue with degraded functionality
+
 ### Requirement: Zot Container Registry
 The system SHALL use Zot for container image storage.
 
@@ -136,6 +248,16 @@ The system SHALL NOT use these technologies:
 ### HashiCorp Terraform
 - ❌ MUST NOT be used for infrastructure as code
 - ✅ Use OpenTofu instead
+
+### Docker Desktop
+- ❌ MUST NOT be used for container runtime
+- ✅ Use Podman/Buildah instead
+- Reason: Proprietary licensing (costs for companies >250 employees)
+
+### Elastic Stack
+- ❌ MUST NOT be used for log aggregation
+- ✅ Use Loki instead
+- Reason: Lighter weight, truly open-source (Apache 2.0 vs SSPL)
 
 ## Implementation Notes
 
