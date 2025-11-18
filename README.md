@@ -12,10 +12,11 @@ The PIPE Domain Bot System is a comprehensive, production-ready bot automation f
 
 ### Key Features
 
-- **🤖 Four Bot Types**: Pipeline automation, data processing, monitoring, and integration hub bots
+- **🤖 Five Bot Types**: Pipeline automation, data processing, monitoring, integration hub, and PR review bots
 - **🏛️ Enterprise Governance**: Full AgenticAI governance architecture with compliance tracking
 - **🔌 Cross-Domain Integration**: Hub-and-spoke integration across 9 domains
 - **🧠 AI Memory**: Cognee integration for governance intelligence and pattern learning
+- **🔍 Automated PR Review**: LLM-powered code review with PR-QUEST integration
 - **📡 Event-Driven Architecture**: Loosely coupled bot communication via event bus
 - **💾 State Management**: Persistent state storage with automatic recovery
 - **📊 Metrics & Monitoring**: Built-in metrics collection and health checking
@@ -133,7 +134,7 @@ Monitors system health and performance.
 - Alerting and notifications
 - Health dashboards
 
-### 4. Integration Hub Bot ⭐ NEW
+### 4. Integration Hub Bot
 
 Manages cross-domain integration and enterprise governance.
 
@@ -155,6 +156,34 @@ BNI, BNP, AXIS, IV, EcoX, THRIVE, DC, BU, PIPE
 - Integration quality monitoring
 
 **📖 Full Documentation:** See [GOVERNANCE.md](docs/GOVERNANCE.md)
+
+### 5. PR Review Bot ⭐ NEW
+
+Automated code review for integration PRs using LLM-powered analysis.
+
+**Features:**
+- Automated GitHub PR monitoring
+- LLM-powered code clustering and analysis (via PR-QUEST)
+- Risk detection and security scanning
+- Quality gate enforcement
+- Pattern learning from review history
+- Cognee integration for AI memory
+- Gamification with XP rewards
+- Auto-approve, flag, or reject based on risk level
+
+**Quality Gates:**
+- **Auto-approve**: Clean PRs with no/low risk
+- **Flag for review**: Moderate risk PRs need human review
+- **Reject**: Critical risks (security, breaking changes)
+
+**Use Cases:**
+- Automated PR code review
+- Integration quality assurance
+- Security vulnerability detection
+- Breaking change prevention
+- Developer productivity enhancement
+
+**📖 Full Documentation:** See [PR_REVIEW_BOT.md](docs/PR_REVIEW_BOT.md)
 
 ---
 

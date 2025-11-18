@@ -85,3 +85,28 @@ bots:
       - DC
       - BU
       - PIPE
+
+  # PR Review bot (PR-QUEST Integration)
+  pr_review:
+    enabled: true
+    check_interval: 60
+    log_level: "INFO"
+    # GitHub configuration
+    github_token: "${GITHUB_TOKEN}"  # Set via environment variable
+    monitored_repositories:
+      - "bsw-arch/PIPE"
+      # Add more repositories as needed
+    # PR-QUEST service
+    pr_quest_url: "http://pr-quest:8000"
+    llm_model: "gpt-4o-mini"  # LLM model for PR-QUEST analysis
+    # Quality gate thresholds
+    auto_approve_threshold: "NONE"  # Auto-approve if risk is NONE
+    flag_review_threshold: "MODERATE"  # Flag for human review if MODERATE
+    reject_threshold: "CRITICAL"  # Reject if CRITICAL
+    # Human reviewers to request when flagging for review
+    human_reviewers:
+      - "senior-dev"
+      - "tech-lead"
+    # Pattern learning
+    enable_pattern_learning: true
+    pattern_refresh_interval: 3600  # Refresh patterns every hour
